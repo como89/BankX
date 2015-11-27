@@ -92,7 +92,7 @@ public class MoneyCommands implements CommandExecutor {
 					Player playerArgO = playerArg.getPlayer(); 
 					try{
 					double amount = Double.parseDouble(args[2]);
-						if(managerAccount.accountPocketExist(playerArgO.getUniqueId()) == BankXResponse.SUCCESS){
+						if(managerAccount.hasPocketAccount(playerArgO.getUniqueId())){
 							if(managerAccount.removeAmountPocket(player.getUniqueId(), amount) == BankXResponse.SUCCESS){
 								managerAccount.addAmountPocket(playerArgO.getUniqueId(), amount);
 								player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.PAY_PLAYER.getMsg(managerAccount.getPlugin().getLanguage()),playerName, amount,""));
@@ -122,7 +122,7 @@ public class MoneyCommands implements CommandExecutor {
 					Player playerArgO = playerArg.getPlayer();
 					try{
 						double amount = Double.parseDouble(args[2]);
-							if(managerAccount.accountPocketExist(playerArgO.getUniqueId()) == BankXResponse.SUCCESS){
+							if(managerAccount.hasPocketAccount(playerArgO.getUniqueId())){
 									managerAccount.addAmountPocket(playerArgO.getUniqueId(), amount);
 									player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.ADD_MONEY.getMsg(managerAccount.getPlugin().getLanguage()),playerName, amount,""));
 									playerArgO.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.RECEIVE_MONEY_FROM_PLAYER.getMsg(managerAccount.getPlugin().getLanguage()),player.getName(), amount,""));
@@ -148,7 +148,7 @@ public class MoneyCommands implements CommandExecutor {
 					Player playerArgO = playerArg.getPlayer();
 					try{
 						double amount = Double.parseDouble(args[2]);
-							if(managerAccount.accountPocketExist(playerArgO.getUniqueId()) == BankXResponse.SUCCESS){
+							if(managerAccount.hasPocketAccount(playerArgO.getUniqueId())){
 									if(managerAccount.removeAmountPocket(playerArgO.getUniqueId(), amount) == BankXResponse.SUCCESS){
 									player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.REMOVE_MONEY.getMsg(managerAccount.getPlugin().getLanguage()),playerName, amount,""));
 									playerArgO.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.RECEIVE_MONEY_FROM_PLAYER.getMsg(managerAccount.getPlugin().getLanguage()),player.getName(), amount,""));

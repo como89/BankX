@@ -20,10 +20,12 @@ public class FileManager {
 	private File file;
 	private BufferedReader reader;
 	private boolean inventorySave;
+	private ManagerAccount managerAccount;
 
-	public FileManager(File file, boolean inventorySave) {
+	public FileManager(File file, boolean inventorySave,ManagerAccount managerAccount) {
 		this.file = file;
 		this.inventorySave = inventorySave;
+		this.managerAccount = managerAccount;
 	}
 
 	public boolean initiateReader() {
@@ -70,7 +72,7 @@ public class FileManager {
 								listBanks.add(new BankAccount(name, balance));
 							}
 							UUID playerUUID = UUID.fromString(lines[x]);
-							BankData.listBank.put(playerUUID, listBanks);
+							managerAccount.bankData.listBank.put(playerUUID, listBanks);
 					}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -104,7 +106,7 @@ public class FileManager {
 					} catch(IllegalArgumentException e){
 						e.printStackTrace();
 					}
-					BankData.listPocket.put(offlinePlayer.getUniqueId(),
+					managerAccount.bankData.listPocket.put(offlinePlayer.getUniqueId(),
 							Double.parseDouble(lines[1]));
 			} catch (IOException e) {
 				e.printStackTrace();

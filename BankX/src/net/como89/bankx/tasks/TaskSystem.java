@@ -109,7 +109,7 @@ public class TaskSystem extends BukkitRunnable {
 			String bank = folder.getName().split("_")[0];
 			File[] allFile = Utils.getFilesInDirectory(folder);
 			for(File file : allFile){
-				FileManager fileInvManager = new FileManager(file,true);
+				FileManager fileInvManager = new FileManager(file,true,managerAccount);
 				Inventory inv = fileInvManager.getInventoryFromSerializableString();
 				if(inv != null){
 					BankAccount bankAccount = managerAccount.getBankAccount(bank);

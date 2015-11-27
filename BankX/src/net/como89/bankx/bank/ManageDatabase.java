@@ -36,15 +36,17 @@ public class ManageDatabase {
 
 	private MyApi myapi;
 	private String prefix;
+	private ManagerAccount managerAccount;
 	
 	/*stat.execute("CREATE TABLE IF NOT EXISTS PLAYERS (ID INT NOT NULL AUTO_INCREMENT,"
 	+ "PLAYER VARCHAR(120) NOT NULL,AMOUNT_POCKET DOUBLE PRECISION NOT NULL, PRIMARY KEY (ID))");
 stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO_INCREMENT,"
 	+ "PLAYER_ID INT NOT NULL, BANKNAME VARCHAR(120) NOT NULL, AMOUNT DOUBLE PRECISION NOT NULL, CONSTRAINT FK_PLAYER_NUMBER FOREIGN KEY (PLAYER_ID) REFERENCES PLAYERS(ID), PRIMARY KEY(ID_BANK))");*/
 	
-	public ManageDatabase(String prefix){
+	public ManageDatabase(String prefix,ManagerAccount managerAccount){
 		myapi = MyApiLib.createInstance("Bankx");
 		this.prefix = prefix;
+		this.managerAccount = managerAccount;
 	}
 	
 	public boolean connectToDatabase(String host, int port, String userName, String password, String database){
@@ -344,13 +346,13 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 					UUID playerUUID = getPlayerUUID(playerId);
 					double amount = getAccountAmountOfPlayer(playerId);
 					ArrayList<Integer> idBanks = getBanksIdOfPlayer(playerId);
-					BankData.listPocket.put(playerUUID, amount);
+					managerAccount.bankData.listPocket.put(playerUUID, amount);
 					if(idBanks.size() > 0){
 						ArrayList<BankAccount> listBanks = getListOfBankAccount(idBanks);
-						BankData.listBank.put(playerUUID, listBanks);
+						managerAccount.bankData.listBank.put(playerUUID, listBanks);
 					}
 					ArrayList<BookLog> listBook = getBookLogOfPlayer(playerId);
-					BankData.listBookLog.put(playerUUID, listBook);
+					managerAccount.bankData.listBookLog.put(playerUUID, listBook);
 				}
 			}
 		}

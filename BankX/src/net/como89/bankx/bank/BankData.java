@@ -10,11 +10,21 @@ import org.bukkit.inventory.Inventory;
 
 public class BankData {
 
-	static HashMap<UUID,Double> listPocket = new HashMap<UUID,Double>();
-	static HashMap<UUID,ArrayList<BankAccount>> listBank = new HashMap<UUID,ArrayList<BankAccount>>();
-	static HashMap<UUID,String> amountOperation = new HashMap<UUID,String>();
-	static HashMap<UUID,ArrayList<BookLog>> listBookLog = new HashMap<UUID,ArrayList<BookLog>>();
-	static ArrayList<String> listPlayerLastChance = new ArrayList<String>();
-	static HashMap<String,Inventory[]> listInventories = new HashMap<String,Inventory[]>();
-	static HashMap<UUID,String> selectedBankAccount = new HashMap<UUID,String>();
+	HashMap<UUID,Double> listPocket;
+	HashMap<UUID,ArrayList<BankAccount>> listBank;
+	HashMap<UUID,String> amountOperation; 
+	HashMap<UUID,ArrayList<BookLog>> listBookLog;
+	ArrayList<String> listPlayerLastChance;
+	HashMap<String,Inventory[]> listInventories;
+	HashMap<UUID,String> selectedBankAccount;
+	
+	BankData(){
+		listPocket = new HashMap<UUID,Double>();
+		listBank = new HashMap<UUID,ArrayList<BankAccount>>();
+		amountOperation = new HashMap<UUID,String>();
+		listBookLog = new HashMap<UUID,ArrayList<BookLog>>();
+		listPlayerLastChance = new ArrayList<String>();
+		listInventories = new HashMap<String,Inventory[]>();
+		selectedBankAccount  = new HashMap<UUID,String>();
+	}
 }

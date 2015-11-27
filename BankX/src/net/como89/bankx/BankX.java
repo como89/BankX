@@ -190,7 +190,7 @@ public class BankX extends JavaPlugin {
 		transferToDatabase = this.getConfig().getBoolean("mysql.transferToDatabase");
 		managerAccount = new ManagerAccount(this);
 		if(useMysql){
-				ManageDatabase manageDatabase = new ManageDatabase(this.getConfig().getString("mysql.prefix"));
+				ManageDatabase manageDatabase = new ManageDatabase(this.getConfig().getString("mysql.prefix"),managerAccount);
 				boolean connected = manageDatabase.connectToDatabase(this.getConfig().getString("mysql.host"),
 						this.getConfig().getInt("mysql.port"),
 						this.getConfig().getString("mysql.username"),

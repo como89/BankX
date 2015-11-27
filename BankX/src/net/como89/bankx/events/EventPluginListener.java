@@ -10,7 +10,6 @@ import net.como89.bankx.bank.InventoriesBank;
 import net.como89.bankx.bank.Language;
 import net.como89.bankx.bank.ManagerAccount;
 import net.como89.bankx.bank.Utils;
-import net.como89.bankx.bank.api.BankXResponse;
 import net.como89.bankx.tasks.TaskSystem;
 import net.como89.bankx.tasks.TaskType;
 
@@ -109,8 +108,9 @@ public class EventPluginListener implements Listener {
 	@EventHandler
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		if(managerAccount.accountPocketExist(player.getUniqueId()) == BankXResponse.ACCOUNT_NOT_EXIST){
-			managerAccount.createPocket(player.getUniqueId());
+		UUID playerUUID = player.getUniqueId();
+		if(managerAccount.hasPocketAccount(playerUUID)){
+			managerAccount.createPocket(playerUUID);
 		}
 	}
 
