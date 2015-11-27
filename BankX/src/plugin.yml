@@ -1,0 +1,14 @@
+main: net.como89.bankx.BankX
+name: BankX
+version: 0.5b DEVBUILD 4
+authors: [como89,madtomic]
+softdepend: [Citizens]
+depend: [MyApi]
+loadbefore: [Vault]
+commands:
+    money:
+        description: You can see your pocket money and your bank account money and you can give to someone else some money with your pocket money.
+        usage: /<command> <pay|add|remove> [playerName] [amount]
+    bank:
+        description: You can create, delete, rename a bank account and also rename a inventory.
+        usage: /<command> <create|delete|rename> [name|account|inventory] [amount|oldername|bankName] [newName|olderName] [newName]

@@ -1,0 +1,37 @@
+#Configuration of BankX
+#The language of the plugin (English or french):
+language: English
+# Default amount when creating the pocket when first connecting.
+default_amount: 100.00
+# Do you want to use the Minecraft NPCs instead of citizen NPCs?
+minecraft_npc: false
+# The representation of the currency of the plugin (suffix currency).
+money: $
+#Do you want to use daily/weekly fee system for storing items?
+feeSystem: #DISABLE FOR NOW, NEED TO BE RECODE
+         use: false
+         #Type of feeSystem (EmptyVault,PayWhenDeposit,PayWhenClosing)
+         type: EmptyVault
+         #How many money per items is cost per day or week?
+         money: 0.1
+         #Weekly or daily?
+         system: weekly
+         #Counts stack of items?
+         countStack: false
+mysql:
+        #Do you want to use the MySQL option? If false, will use the SQL Option.
+         use: false
+        #Do you want to transfer data from file to database?
+         transferToDatabase: false
+        #The host of MySQL server.
+         host: 127.0.0.1
+        #The port of MySQL server. (Default to 3306)
+         port: 3306
+        #Prefix before each table name.
+         prefix : BankX_
+        #The username of MySQL server.
+         username: username
+        #The password of MySQL server.
+         password: password
+        #The database name.
+         database: BankX
