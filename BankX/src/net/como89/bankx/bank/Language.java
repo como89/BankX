@@ -42,7 +42,8 @@ public enum Language {
 	BANK_ACCOUNT_NOT_EXIST("Ce compte en banque n'existe pas.","This bank account doesn't exist."),
 	WELCOME_MSG("Re bonjour, <player>, comment puis-je vous aider aujourd'hui?","Welcome back, <player>, how can I help you today?"),
 	NOT_YOURSELF("Vous ne pouvez pas envoyer de l'argent à vous même.","You can't send money to yourself."),
-	NO_CREATIVE("Le gamemode creative n'est pas permis pour ouvrir les inventaires.","The creative gamemode is not permit to open inventories.");
+	NO_CREATIVE("Le gamemode creative n'est pas permis pour ouvrir les inventaires.","The creative gamemode is not permit to open inventories."),
+	NO_BEGIN_ZERO("Vous ne pouvez pas commencer par zéro.","You can't begin with zero.");
 	
 	private String msgFrench;
 	private String msgEnglish;

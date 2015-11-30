@@ -19,7 +19,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
-@SuppressWarnings("deprecation")
+@Deprecated
 public class TaskSystem extends BukkitRunnable {
 
 	private ManagerAccount managerAccount;

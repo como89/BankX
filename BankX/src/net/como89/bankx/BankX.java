@@ -9,13 +9,15 @@ import java.util.logging.Logger;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.trait.TraitInfo;
 import net.como89.bankx.bank.BankAccount;
-import net.como89.bankx.bank.InventoriesBank;
 import net.como89.bankx.bank.ManageDatabase;
 import net.como89.bankx.bank.ManagerAccount;
 import net.como89.bankx.bank.api.BankXApi;
+import net.como89.bankx.bank.inventories.InventoriesBank;
 import net.como89.bankx.commands.BankCommands;
 import net.como89.bankx.commands.MoneyCommands;
-import net.como89.bankx.events.EventPluginListener;
+import net.como89.bankx.events.InventoryInteraction;
+import net.como89.bankx.events.PlayerConnection;
+import net.como89.bankx.events.PlayerInteraction;
 import net.como89.bankx.npc.Banker;
 import net.como89.bankx.tasks.TaskSystem;
 import net.como89.bankx.tasks.TaskType;
@@ -25,8 +27,10 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+@SuppressWarnings("deprecation")
 public class BankX extends JavaPlugin {
 	
 	private static Logger log;
@@ -99,10 +103,16 @@ public class BankX extends JavaPlugin {
 //			Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new TaskSystem(managerAccount,TaskType.FEESYSTEM), 20 * 604800, 20 * 604800);
 //			}
 //		}
-		getServer().getPluginManager().registerEvents(new EventPluginListener(managerAccount), this);
+		PluginManager pm = getServer().getPluginManager();
+		pm.registerEvents(new InventoryInteraction(managerAccount), this);
+		pm.registerEvents(new PlayerConnection(managerAccount), this);
+		pm.registerEvents(new PlayerInteraction(managerAccount), this);
+		
 		getCommand("money").setExecutor(new MoneyCommands(managerAccount));
 		getCommand("bank").setExecutor(new BankCommands(managerAccount));
-		InventoriesBank.initialiseInventory();	
+		
+		InventoriesBank.initialiseInventory();
+		
 		if(this.getServer().getPluginManager().getPlugin("Vault") != null){
 		VaultHook.hookToVault(this);
 		}

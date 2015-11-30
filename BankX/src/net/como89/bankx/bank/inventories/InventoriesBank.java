@@ -1,15 +1,21 @@
-package net.como89.bankx.bank;
+package net.como89.bankx.bank.inventories;
 
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import net.como89.bankx.bank.BankAccount;
+import net.como89.bankx.bank.ManagerAccount;
 
 public class InventoriesBank {
 	
@@ -120,6 +126,46 @@ public class InventoriesBank {
 		return invBank;
 	}
 	
+	public static Inventory[] initialiseTransfertInventories(String playerName,ManagerAccount managerAccount){
+		OfflinePlayer[] listPlayer = Bukkit.getOfflinePlayers();
+			int nbMenu = listPlayer.length / 54;
+			Inventory[] listInv = new Inventory[1 + nbMenu];
+			for(int i = 0; i < listInv.length;i++){
+				listInv[i] = Bukkit.createInventory(null, 54,"Transfer Page #"+(i+1));
+				if(listInv.length > 1){
+				ItemStack gotoNext = new ItemStack(Material.WOOD_DOOR,1);
+				ItemMeta im = gotoNext.getItemMeta();
+				im.setDisplayName((i + 1 == listPlayer.length)?ChatColor.AQUA + "Page #1":ChatColor.AQUA + "Page #" + i + 2);
+				gotoNext.setItemMeta(im);
+				listInv[i].setItem(52, gotoNext);
+				}
+				ItemStack cancelButton = new ItemStack(Material.IRON_DOOR);
+				ItemMeta itemM = cancelButton.getItemMeta();
+				itemM.setDisplayName(ChatColor.RED + "Cancel");
+				cancelButton.setItemMeta(itemM);
+				listInv[i].setItem(53, cancelButton);
+				
+				int count = 0;
+				for(OfflinePlayer offlinePlayer : listPlayer){
+					ItemStack skull = makeItemSkull(offlinePlayer.getName());
+					if(listInv[i].getItem(count) == null && managerAccount.hasBankAccount(offlinePlayer.getUniqueId()) && !playerName.equals(offlinePlayer.getName())){
+						listInv[i].setItem(count,skull);
+					}
+					count++;
+				}
+				
+				ItemStack itemglass = new ItemStack(Material.STAINED_GLASS_PANE,1,(short)4);
+				itemM = itemglass.getItemMeta();
+				itemM.setDisplayName(" ");
+				itemglass.setItemMeta(itemM);
+				for(int j = 0;j < listInv[i].getSize();j++){
+					if(listInv[i].getItem(j) == null)
+					listInv[i].setItem(j, itemglass);
+				}
+		}
+			return listInv;
+	}
+	
 	public static Inventory initialiseInventoryMoney(ManagerAccount managerAccount,String bankName){
 		//Money Inventory
 		ItemStack addMoney = new ItemStack(Material.EMERALD,1);
@@ -160,7 +206,89 @@ public class InventoriesBank {
 		return invMoney;
 	}
 	
-	public static ItemStack selectBalanceDisplay(ItemStack itemBalance,ManagerAccount managerAccount,String bankName){
+	public static Inventory initialiseMultiInventory(Inventory inv,Set<String> listInventory) {
+		inv = Bukkit.createInventory(null, 9, ChatColor.GOLD + "" + ChatColor.BOLD + "Inventories");
+		for(int i = 0; i < listInventory.size();i++){
+			ItemStack item = new ItemStack(Material.CHEST,1);
+			ItemMeta meta = item.getItemMeta();
+			meta.setDisplayName(ChatColor.AQUA + (String) listInventory.toArray()[i]);
+			item.setItemMeta(meta);
+			inv.setItem(i, item);
+		}
+		for(ItemStack items : inv.getContents()){
+			if(items == null){
+				ItemStack item = new ItemStack(Material.EMERALD,1);
+				ItemMeta meta = item.getItemMeta();
+				meta.setDisplayName(ChatColor.AQUA + "Add inventory");
+				item.setItemMeta(meta);
+				inv.addItem(item);
+				break;
+			}
+		}
+		return inv;
+	}
+	
+	public static Inventory initialiseInventoryKeyPad(String inventoryName,UUID playerUUID,ManagerAccount managerAccount){
+		Inventory inv = Bukkit.createInventory(null, 54, inventoryName);
+		ItemStack[] items = new ItemStack[9];
+		ItemStack item = new ItemStack(Material.IRON_INGOT,1);
+		ItemMeta im;
+		for(int i = 0; i < items.length; i++){
+			items[i] = new ItemStack(Material.IRON_INGOT);
+			if(i == 0){
+			items[i].setAmount(i - 1);
+			} else {
+				items[i].setAmount(i + 1);
+			}
+			im = items[i].getItemMeta();
+			im.setDisplayName(ChatColor.AQUA + "" + (i + 1));
+			items[i].setItemMeta(im);
+		}
+		im = item.getItemMeta();
+		item.setAmount(0);
+		im.setDisplayName(ChatColor.AQUA + "0");
+		item.setItemMeta(im);
+		inv.setItem(31, item);
+		
+		inv.setItem(3, items[0]);
+		inv.setItem(4, items[1]);
+		inv.setItem(5, items[2]);
+		inv.setItem(12, items[3]);
+		inv.setItem(13, items[4]);
+		inv.setItem(14, items[5]);
+		inv.setItem(21, items[6]);
+		inv.setItem(22, items[7]);
+		inv.setItem(23, items[8]);
+		
+		ItemStack ok = new ItemStack(Material.EMERALD,1);
+		im = ok.getItemMeta();
+		im.setDisplayName(ChatColor.GREEN + "Ok");
+		ok.setItemMeta(im);
+		
+		ItemStack correction = new ItemStack(Material.GOLD_INGOT,1);
+		im = correction.getItemMeta();
+		im.setDisplayName(ChatColor.YELLOW + "Correction");
+		correction.setItemMeta(im);
+		
+		ItemStack cancel = new ItemStack(Material.REDSTONE,1);
+		im = cancel.getItemMeta();
+		im.setDisplayName(ChatColor.RED + "Cancel");
+		cancel.setItemMeta(im);
+		
+		ItemStack displayBalance = new ItemStack(Material.SKULL_ITEM);
+		im = displayBalance.getItemMeta();
+		im.setDisplayName(ChatColor.GOLD + "Balance");
+		displayBalance.setItemMeta(im);
+		displayBalance.setDurability((short) SkullType.PLAYER.ordinal());
+		
+		inv.setItem(42, ok);
+		inv.setItem(43, correction);
+		inv.setItem(53, selectBalanceDisplay(displayBalance, managerAccount, managerAccount.getSelectedBankAccount(playerUUID)));
+		inv.setItem(44, cancel);
+		return inv;
+	}
+	
+	private static ItemStack selectBalanceDisplay(ItemStack itemBalance,ManagerAccount managerAccount,String bankName){
 		ItemMeta itemm = itemBalance.getItemMeta();
 		ArrayList<String> lores = new ArrayList<String>();
 		lores.add(ChatColor.GRAY + "Balance Bank Account : " + ChatColor.GOLD + managerAccount.getBankAccount(bankName).getBalance() + ChatColor.GREEN + " "+ managerAccount.getPlugin().getRepresentMoney());
@@ -168,5 +296,14 @@ public class InventoriesBank {
 		itemm.setLore(lores);
 		itemBalance.setItemMeta(itemm);
 		return itemBalance;
+	}
+	
+	private static ItemStack makeItemSkull(String playerName){
+		ItemStack item = new ItemStack(Material.SKULL_ITEM);
+		ItemMeta im = item.getItemMeta();
+		im.setDisplayName(playerName);
+		item.setItemMeta(im);
+		item.setDurability((short) SkullType.PLAYER.ordinal());
+		return item;
 	}
 }

@@ -9,9 +9,9 @@ import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.Trait;
 import net.como89.bankx.BankX;
-import net.como89.bankx.bank.InventoriesBank;
 import net.como89.bankx.bank.Language;
 import net.como89.bankx.bank.ManagerAccount;
+import net.como89.bankx.bank.inventories.InventoriesBank;
 
 public class Banker extends Trait {
 
