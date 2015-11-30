@@ -82,11 +82,6 @@ public class InventoryInteraction implements Listener {
 			if(itemM == null || inv.getType() != InventoryType.CHEST || itemM.getDisplayName() == null)
 				return;
 				
-				if((event.isRightClick() || event.getAction() == InventoryAction.PICKUP_ALL || event.getAction() == InventoryAction.COLLECT_TO_CURSOR || event.isShiftClick()) && (inv.getTitle().contains("Bank") ||
-						inv.getTitle().contains("Inventories") || inv.getTitle().contains("Money") || inv.getTitle().contains("Transfer") || inv.getTitle().contains("Deposit") || inv.getTitle().contains("Withdraw") || inv.getTitle().contains("Choose the bank account"))){
-					event.setCancelled(true);
-				}
-				
 				InventoryInteract inventoryInteract = null;
 				
 				if (invTitle.contains(ChatColor.BOLD + "Bank")) {
@@ -113,6 +108,7 @@ public class InventoryInteraction implements Listener {
 				
 				if(inventoryInteract != null){
 					inventoryInteract.interact();
+					event.setCancelled(true);
 				}
 	}
 	

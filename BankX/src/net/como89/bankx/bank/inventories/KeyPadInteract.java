@@ -104,7 +104,7 @@ public class KeyPadInteract extends InventoryInteract {
 					callCloseInventory(player);
 				}
 			}
-		else if(itemDisplayName.contains("Correction")){
+		} else if(itemDisplayName.contains("Correction")){
 			managerAccount.clearAmountInOperation(player.getUniqueId());
 			changeAmountOperation(player.getUniqueId(), "", inv);
 			player.sendMessage(ChatColor.DARK_AQUA + Language.CLEAR_AMOUNT_OPERATION.getMsg(managerAccount.getPlugin().getLanguage()));
@@ -112,7 +112,6 @@ public class KeyPadInteract extends InventoryInteract {
 		else if(itemDisplayName.contains("Cancel")){
 			callCloseInventory(player);
 			callOpenInventory(player,InventoriesBank.initialiseInventoryMenu(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId())));
-		}
 		}
 		
 	}
