@@ -35,7 +35,7 @@ public class Banker extends Trait {
 					player.openInventory(InventoriesBank.initialiseInventoryChangeBank(managerAccount.getBanksAccountOfPlayer(player.getUniqueId())));
 					return;
 				}
-				player.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId())));
+				player.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId()));
 				player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.WELCOME_MSG.getMsg(managerAccount.getPlugin().getLanguage()),player.getName(),0.0,""));
 			} else {
 				player.sendMessage(ChatColor.RED + Language.NO_BANK_ACCOUNT.getMsg(managerAccount.getPlugin().getLanguage()));

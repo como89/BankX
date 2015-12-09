@@ -1,6 +1,5 @@
 package net.como89.bankx.commands;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -10,8 +9,6 @@ import org.bukkit.entity.Player;
 import net.como89.bankx.bank.Language;
 import net.como89.bankx.bank.ManagerAccount;
 import net.como89.bankx.bank.api.BankXResponse;
-import net.como89.bankx.tasks.TaskSystem;
-import net.como89.bankx.tasks.TaskType;
 
 public class BankCommands implements CommandExecutor {
 	
@@ -21,7 +18,6 @@ public class BankCommands implements CommandExecutor {
 		this.managerAccount = managerAccount;
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String lbl, String[] args) {
 		if(!(sender instanceof Player)){
@@ -42,13 +38,10 @@ public class BankCommands implements CommandExecutor {
 			if(args.length == 2){
 				if(args[0].equalsIgnoreCase("delete")){
 					String name = args[1];
-					double amount = managerAccount.deleteBankAccount(name);
+					double amount = managerAccount.deleteBankAccount(name,player.getUniqueId());
 					if(amount != -1){
 						player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.DELETE_BANK.getMsg(managerAccount.getPlugin().getLanguage()),player.getName(), amount,name));
 						managerAccount.addAmountPocket(player.getUniqueId(), amount);
-						if(managerAccount.getManageDatabase() == null){
-							Bukkit.getScheduler().runTask(managerAccount.getPlugin(), new TaskSystem(managerAccount,TaskType.SAVING_DATA));
-						}
 					} else {
 						player.sendMessage(ChatColor.RED + Language.BANK_ACCOUNT_NOT_EXIST.getMsg(managerAccount.getPlugin().getLanguage()));
 					}
@@ -64,12 +57,9 @@ public class BankCommands implements CommandExecutor {
 					}
 					if(managerAccount.getAmountPocket(player.getUniqueId()) >= amount){
 						if(managerAccount.createBankAccount(player.getUniqueId(),name) == BankXResponse.SUCCESS){
-							managerAccount.addAmountBankAccount(name, amount);
+							managerAccount.addAmountBankAccount(name,player.getUniqueId(), amount);
 							player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.CREATE_BANK.getMsg(managerAccount.getPlugin().getLanguage()),player.getName(), amount,name));
 							managerAccount.removeAmountPocket(player.getUniqueId(), amount);
-							if(managerAccount.getManageDatabase() == null){
-								Bukkit.getScheduler().runTask(managerAccount.getPlugin(), new TaskSystem(managerAccount,TaskType.SAVING_DATA));
-							}
 							return true;
 						}
 						else{
@@ -101,7 +91,7 @@ public class BankCommands implements CommandExecutor {
 						String bankName = args[2];
 						String olderName = args[3];
 						String newName = args[4];
-						if(managerAccount.changeInventoryName(bankName, olderName, newName)){
+						if(managerAccount.changeInventoryName(bankName, olderName, newName,player.getUniqueId())){
 							player.sendMessage(ChatColor.GREEN + managerAccount.replaceTag(Language.CHANGE_ACCOUNT_NAME.getMsg(managerAccount.getPlugin().getLanguage()),player.getName(),0, newName));
 							return true;
 						}

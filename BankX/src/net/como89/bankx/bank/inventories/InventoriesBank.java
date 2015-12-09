@@ -84,7 +84,7 @@ public class InventoriesBank {
 		return inv;
 	}
 	
-	public static Inventory initialiseInventoryMenu(ManagerAccount managerAccount,String bankName){
+	public static Inventory initialiseInventoryMenu(ManagerAccount managerAccount,String bankName,UUID playerUUID){
 		//Bank inventory
 		ItemStack bankItems = new ItemStack(Material.CHEST,1);
 		ItemMeta itemM = bankItems.getItemMeta();
@@ -101,7 +101,7 @@ public class InventoriesBank {
 		itemM.setDisplayName(ChatColor.GOLD + "Balance");
 		displayBalance.setItemMeta(itemM);
 		displayBalance.setDurability((short) SkullType.PLAYER.ordinal());
-		displayBalance = selectBalanceDisplay(displayBalance,managerAccount,bankName);
+		displayBalance = selectBalanceDisplay(displayBalance,managerAccount,bankName,playerUUID);
 		
 		ItemStack bookLog = new ItemStack(Material.WRITTEN_BOOK);
 		BookMeta bookM = (BookMeta) bookLog.getItemMeta();
@@ -166,7 +166,7 @@ public class InventoriesBank {
 			return listInv;
 	}
 	
-	public static Inventory initialiseInventoryMoney(ManagerAccount managerAccount,String bankName){
+	public static Inventory initialiseInventoryMoney(ManagerAccount managerAccount,String bankName,UUID playerUUID){
 		//Money Inventory
 		ItemStack addMoney = new ItemStack(Material.EMERALD,1);
 		ItemMeta itemM = addMoney.getItemMeta();
@@ -188,7 +188,7 @@ public class InventoriesBank {
 		itemM.setDisplayName(ChatColor.GOLD + "Balance");
 		displayBalance.setItemMeta(itemM);
 		displayBalance.setDurability((short) SkullType.PLAYER.ordinal());
-		displayBalance = selectBalanceDisplay(displayBalance,managerAccount,bankName);
+		displayBalance = selectBalanceDisplay(displayBalance,managerAccount,bankName,playerUUID);
 		
 		ItemStack cancelButton = new ItemStack(Material.WOOD_DOOR);
 		itemM = cancelButton.getItemMeta();
@@ -283,16 +283,16 @@ public class InventoriesBank {
 		
 		inv.setItem(42, ok);
 		inv.setItem(43, correction);
-		inv.setItem(53, selectBalanceDisplay(displayBalance, managerAccount, managerAccount.getSelectedBankAccount(playerUUID)));
+		inv.setItem(53, selectBalanceDisplay(displayBalance, managerAccount, managerAccount.getSelectedBankAccount(playerUUID),playerUUID));
 		inv.setItem(44, cancel);
 		return inv;
 	}
 	
-	private static ItemStack selectBalanceDisplay(ItemStack itemBalance,ManagerAccount managerAccount,String bankName){
+	private static ItemStack selectBalanceDisplay(ItemStack itemBalance,ManagerAccount managerAccount,String bankName,UUID playerUUID){
 		ItemMeta itemm = itemBalance.getItemMeta();
 		ArrayList<String> lores = new ArrayList<String>();
-		lores.add(ChatColor.GRAY + "Balance Bank Account : " + ChatColor.GOLD + managerAccount.getBankAccount(bankName).getBalance() + ChatColor.GREEN + " "+ managerAccount.getPlugin().getRepresentMoney());
-		lores.add(ChatColor.BLUE + "Balance Wallet  : " + ChatColor.GOLD + managerAccount.getAmountPocket(managerAccount.getOwnerBank(bankName)) + ChatColor.GREEN + " " + managerAccount.getPlugin().getRepresentMoney());
+		lores.add(ChatColor.GRAY + "Balance Bank Account : " + ChatColor.GOLD + managerAccount.getBankAccount(bankName,playerUUID).getBalance() + ChatColor.GREEN + " "+ managerAccount.getPlugin().getRepresentMoney());
+		lores.add(ChatColor.BLUE + "Balance Wallet  : " + ChatColor.GOLD + managerAccount.getAmountPocket(playerUUID) + ChatColor.GREEN + " " + managerAccount.getPlugin().getRepresentMoney());
 		itemm.setLore(lores);
 		itemBalance.setItemMeta(itemm);
 		return itemBalance;

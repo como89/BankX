@@ -6,7 +6,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -27,7 +26,7 @@ import net.como89.bankx.bank.logsystem.TypeLog;
 public class ManagerAccount {
 
 	private BankX plugin;
-	BankData bankData;
+	BankXData bankData;
 	private ManageDatabase manageDatabase;
 	private FileManager filePocketManager;
 	private FileManager fileBankManager;
@@ -35,7 +34,7 @@ public class ManagerAccount {
 
 	public ManagerAccount(BankX plugin) {
 		this.plugin = plugin;
-		this.bankData = new BankData();
+		this.bankData = new BankXData();
 		this.manageDatabase = null;
 			if(!plugin.isUseMySQL()){
 				File fileSQL = new File("plugins/BankX/Data/database.db");
@@ -76,19 +75,18 @@ public class ManagerAccount {
 		this.manageDatabase = manageDatabase;
 	}
 
-	public double getAmountPocket(UUID playerUUID) {
-		if (bankData.listPocket.containsKey(playerUUID)) {
-			return bankData.listPocket.get(playerUUID);
-		}
-		return -1;
+	public double getAmountPocket(UUID playerUUID) {	
+		PlayerData playerData = getPlayerData(playerUUID);
+		return playerData == null?-1:playerData.moneyPocket;
 	}
 
 	public BankXResponse removeAmountPocket(UUID playerUUID, double money) {
-		if (bankData.listPocket.containsKey(playerUUID)) {
-			double moneyPocket = bankData.listPocket.get(playerUUID);
+		PlayerData playerData = getPlayerData(playerUUID);
+		if (playerData != null) {
+			double moneyPocket = playerData.moneyPocket;
 			if (moneyPocket >= money) {
 				double moneyTotal = moneyPocket - money;
-				bankData.listPocket.put(playerUUID, moneyTotal);
+				playerData.moneyPocket = moneyTotal;
 				logIntoBook(playerUUID, "Remove money in wallet.", "Remove " + money + " " + plugin.getRepresentMoney() + " in " + Bukkit.getPlayer(playerUUID).getName() + " wallet.", new Date(System.currentTimeMillis()), TransactionType.REMOVE, TypeLog.MONEY);
 				if(manageDatabase != null){
 					if(manageDatabase.getPlayerId(playerUUID.toString()) != -1){
@@ -103,10 +101,11 @@ public class ManagerAccount {
 	}
 
 	public BankXResponse addAmountPocket(UUID playerUUID, double money) {
-		if (bankData.listPocket.containsKey(playerUUID)) {
-			double moneyPocket = bankData.listPocket.get(playerUUID);
+		PlayerData playerData = getPlayerData(playerUUID);
+		if (playerData != null) {
+			double moneyPocket = playerData.moneyPocket;
 			double moneyTotal = moneyPocket + money;
-			bankData.listPocket.put(playerUUID, moneyTotal);
+			playerData.moneyPocket = moneyTotal;
 			logIntoBook(playerUUID, "Add money in wallet.", "Add " + money + " " + plugin.getRepresentMoney() + " in " + Bukkit.getPlayer(playerUUID).getName() + " wallet.", new Date(System.currentTimeMillis()), TransactionType.ADD, TypeLog.MONEY);
 			if(manageDatabase != null){
 				if(manageDatabase.getPlayerId(playerUUID.toString()) != -1){
@@ -119,9 +118,11 @@ public class ManagerAccount {
 	}
 
 	public void createPocket(UUID playerUUID) {
-		if (!bankData.listPocket.containsKey(playerUUID)) {
+		PlayerData playerData = getPlayerData(playerUUID);
+		if (playerData == null) {
 			double defaultAmount = plugin.getDefaultAmount();
-			bankData.listPocket.put(playerUUID, defaultAmount);
+			playerData = new PlayerData(playerUUID,defaultAmount);
+			bankData.listPlayerData.add(playerData);
 			if(manageDatabase != null){
 				if(manageDatabase.getPlayerId(playerUUID.toString()) == -1){
 					manageDatabase.insertPlayer(playerUUID.toString(), defaultAmount);
@@ -132,20 +133,20 @@ public class ManagerAccount {
 	}
 
 	public boolean hasPocketAccount(UUID playerUUID) {
-		return bankData.listPocket.containsKey(playerUUID);
+		return getPlayerData(playerUUID) != null;
 	}
 
 	public boolean hasBankAccount(UUID playerUUID) {
-		if(!bankData.listBank.containsKey(playerUUID))
-			return false;
-		return bankData.listBank.get(playerUUID).size() > 0;
+		PlayerData playerData = getPlayerData(playerUUID);
+		return playerData != null && playerData.listBanksAccount.size() > 0;
 	}
 
 	public BankXResponse createBankAccount(UUID playerUUID, String name) {
-		if (!bankData.listBank.containsKey(playerUUID)) {
+		PlayerData playerData = getPlayerData(playerUUID);
+		if (!(playerData.listBanksAccount.size() > 0)) {
 			ArrayList<BankAccount> listAccount = new ArrayList<BankAccount>();
 			listAccount.add(new BankAccount(name));
-			bankData.listBank.put(playerUUID, listAccount);
+			playerData.listBanksAccount = listAccount;
 			if(manageDatabase != null){
 				if(manageDatabase.getBankId(name) != -1){
 					return BankXResponse.BANK_ACCOUNT_ALREADY_EXIST;
@@ -158,14 +159,14 @@ public class ManagerAccount {
 			return BankXResponse.SUCCESS;
 		} else {
 			boolean exist = false;
-			for (BankAccount bank : bankData.listBank.get(playerUUID)) {
+			for (BankAccount bank : playerData.listBanksAccount) {
 				if (bank.getName().equals(name)) {
 					exist = true;
 					break;
 				}
 			}
 			if (!exist) {
-				bankData.listBank.get(playerUUID).add(new BankAccount(name));
+				playerData.listBanksAccount.add(new BankAccount(name));
 				if(manageDatabase != null){
 					if(manageDatabase.getBankId(name) != -1){
 						return BankXResponse.BANK_ACCOUNT_ALREADY_EXIST;
@@ -181,41 +182,28 @@ public class ManagerAccount {
 		return BankXResponse.BANK_ACCOUNT_ALREADY_EXIST;
 	}
 
-	public double deleteBankAccount(String name) {
-		for (ArrayList<BankAccount> listBankAccount : bankData.listBank
-				.values()) {
-			for (BankAccount bankAccount : listBankAccount) {
+	public double deleteBankAccount(String name, UUID ownerPlayer) {
+		PlayerData playerData = getPlayerData(ownerPlayer);
+			for (BankAccount bankAccount : playerData.listBanksAccount) {
 				if (bankAccount.getName().equals(name)) {
-					logIntoBook(getOwnerBank(name), "Delete bank account.", "Delete "+name+" bank account.", 
+					logIntoBook(ownerPlayer, "Delete bank account.", "Delete "+name+" bank account.", 
 							new Date(System.currentTimeMillis()), TransactionType.DELETE, TypeLog.MONEY);
-					listBankAccount.remove(bankAccount);
+					playerData.listBanksAccount.remove(bankAccount);
 					if(manageDatabase != null){
 						manageDatabase.deleteBankAccount(name);
 					}
 					return bankAccount.getBalance();
 				}
 			}
-		}
 		return -1;
 	}
 
-	public List<String> getListBank() {
-		List<String> listBank = new ArrayList<String>();
-		for (ArrayList<BankAccount> listBankAccount : bankData.listBank
-				.values()) {
-			for (BankAccount bankAccount : listBankAccount) {
-				listBank.add(bankAccount.getName());
-			}
-		}
-		return listBank;
-	}
-
-	public BankXResponse addAmountBankAccount(String name, double amount) {
-		BankAccount bankAccount = getBankAccount(name);
+	public BankXResponse addAmountBankAccount(String name,UUID uuidPlayer, double amount) {
+		BankAccount bankAccount = getBankAccount(name,uuidPlayer);
 		if (bankAccount != null) {
 			double totalBalance = bankAccount.getBalance() + amount;
 			bankAccount.setBalance(totalBalance);
-			logIntoBook(getOwnerBank(name), "Add money in bank account.", "Add " +amount+ " " + plugin.getRepresentMoney() + " in "+name+" bank account.", 
+			logIntoBook(uuidPlayer, "Add money in bank account.", "Add " +amount+ " " + plugin.getRepresentMoney() + " in "+name+" bank account.", 
 					new Date(System.currentTimeMillis()), TransactionType.ADD, TypeLog.MONEY);
 			if(manageDatabase != null){
 				if(manageDatabase.getBankId(name) != -1){
@@ -227,18 +215,18 @@ public class ManagerAccount {
 		return BankXResponse.BANK_ACCOUNT_NOT_EXIST;
 	}
 
-	public BankXResponse removeAmountBankAccount(String name, double amount) {
-		BankAccount bankAccount = getBankAccount(name);
+	public BankXResponse removeAmountBankAccount(String bankName,UUID playerUUID, double amount) {
+		BankAccount bankAccount = getBankAccount(bankName,playerUUID);
 		if (bankAccount != null) {
 			double moneyBank = bankAccount.getBalance();
 			if (moneyBank >= amount) {
 				double totalBalance = moneyBank - amount;
 				bankAccount.setBalance(totalBalance);
-				logIntoBook(getOwnerBank(name), "Remove money in bank account.", "Remove " +amount+ " " + plugin.getRepresentMoney() + " in "+name+" bank account.", 
+				logIntoBook(playerUUID, "Remove money in bank account.", "Remove " +amount+ " " + plugin.getRepresentMoney() + " in "+bankName+" bank account.", 
 						new Date(System.currentTimeMillis()), TransactionType.REMOVE, TypeLog.MONEY);
 				if(manageDatabase != null){
-					if(manageDatabase.getBankId(name) != -1){
-						manageDatabase.updateAmountBank(name, totalBalance);
+					if(manageDatabase.getBankId(bankName) != -1){
+						manageDatabase.updateAmountBank(bankName, totalBalance);
 					}
 				}
 				return BankXResponse.SUCCESS;
@@ -249,7 +237,7 @@ public class ManagerAccount {
 	}
 	
 	public boolean changeBankName(String olderName,String newName,UUID playerUUID){
-		BankAccount bankAccount = getBankAccount(olderName);
+		BankAccount bankAccount = getBankAccount(olderName,playerUUID);
 		if(bankAccount != null){
 			if(!checkBankAccountExist(newName, playerUUID)){
 				bankAccount.setName(newName);
@@ -261,8 +249,8 @@ public class ManagerAccount {
 		return false;
 	}
 	
-	public boolean changeInventoryName(String bankName,String olderName,String newName){
-		BankAccount bankAccount = getBankAccount(bankName);
+	public boolean changeInventoryName(String bankName,String olderName,String newName,UUID playerUUID){
+		BankAccount bankAccount = getBankAccount(bankName,playerUUID);
 		if(bankAccount != null){
 			boolean inventoryExist = false;
 			String invenName = "";
@@ -297,20 +285,21 @@ public class ManagerAccount {
 		}
 	}
 
-	public void clearInventory(String name) {
-		BankAccount bankAccount = getBankAccount(name);
+	public void clearInventory(String name,UUID playerUUID) {
+		BankAccount bankAccount = getBankAccount(name,playerUUID);
 		if(bankAccount != null){
 			bankAccount.clearInventory();
 		}
 	}
 	
 	public void giveBookLog(Player player){
+		PlayerData playerData = getPlayerData(player.getUniqueId());
 		ItemStack itemBook = new ItemStack(Material.WRITTEN_BOOK);
 		BookMeta bookM = (BookMeta) itemBook.getItemMeta();
 		bookM.setDisplayName(ChatColor.DARK_PURPLE + "BookLog");
 		bookM.setAuthor(player.getName() + "'s log.");
-		if(bankData.listBookLog.containsKey(player.getUniqueId())){
-			for(BookLog bookLog : bankData.listBookLog.get(player.getUniqueId())){
+		if(playerData.listBookLog.size() > 0){
+			for(BookLog bookLog : playerData.listBookLog){
 				bookM.addPage(ChatColor.translateAlternateColorCodes('&',bookLog.toString()));
 			}
 		}
@@ -326,27 +315,21 @@ public class ManagerAccount {
 		return bankData.amountOperation.get(playerUUID);
 	}
 
-	public double getAmountInBankAccount(String name) {
-		BankAccount bankAccount = getBankAccount(name);
+	public double getAmountInBankAccount(String name,UUID playerUUID) {
+		BankAccount bankAccount = getBankAccount(name,playerUUID);
 		if (bankAccount != null) {
 			return bankAccount.getBalance();
 		}
 		return -1;
 	}
 	
-	public ArrayList<BankAccount> getBanksAccountOfPlayer(UUID playerUUID){
-		return bankData.listBank.get(playerUUID);
+	public ArrayList<PlayerData> getAllPlayerAccounts(){
+		return bankData.listPlayerData;
 	}
 	
-	public UUID getOwnerBank(String name){
-		for(UUID playerName : bankData.listBank.keySet()){
-			for(BankAccount bank : bankData.listBank.get(playerName)){
-				if(bank.getName().equals(name)){
-					return playerName;
-				}
-			}
-		}
-		return null;
+	public ArrayList<BankAccount> getBanksAccountOfPlayer(UUID playerUUID){
+		PlayerData playerData = getPlayerData(playerUUID);
+		return playerData.listBanksAccount;
 	}
 
 	public String replaceTag(String msg, String player, double amount,String name) {
@@ -357,16 +340,8 @@ public class ManagerAccount {
 		return ligne;
 	}
 
-	public ArrayList<UUID> getAllPlayerAccount() {
-		ArrayList<UUID> listPlayer = new ArrayList<UUID>();
-		for (UUID player : bankData.listBank.keySet()) {
-			listPlayer.add(player);
-		}
-		return listPlayer;
-	}
-
-	public HashMap<String, ItemStack[]> getAllInventoryOfTheBank(String bankAccountName) {
-		BankAccount bankAccount = getBankAccount(bankAccountName);
+	public HashMap<String, ItemStack[]> getAllInventoryOfTheBank(String bankAccountName,UUID playerUUID) {
+		BankAccount bankAccount = getBankAccount(bankAccountName,playerUUID);
 		if(bankAccount != null){
 			return bankAccount.getBankInventories();
 		}
@@ -402,7 +377,7 @@ public class ManagerAccount {
 	}
 	
 	public String getSelectedBankAccount(UUID playerUUID){
-		BankAccount bankAccount = getBankAccount(bankData.selectedBankAccount.get(playerUUID));
+		BankAccount bankAccount = getBankAccount(bankData.selectedBankAccount.get(playerUUID),playerUUID);
 		return bankAccount != null?bankAccount.getName():null;
 	}
 	
@@ -410,15 +385,13 @@ public class ManagerAccount {
 		bankData.selectedBankAccount.put(playerUUID, bankName);
 	}
 
-	public BankAccount getBankAccount(String name) {
-		for (ArrayList<BankAccount> listBankAccount : bankData.listBank
-				.values()) {
-			for (BankAccount bankAccount : listBankAccount) {
+	public BankAccount getBankAccount(String name,UUID uuidPlayer) {
+		PlayerData playerData = getPlayerData(uuidPlayer);
+			for (BankAccount bankAccount : playerData.listBanksAccount) {
 				if (bankAccount.getName().equals(name)) {
 					return bankAccount;
 				}
 			}
-		}
 		return null;
 	}
 	
@@ -435,15 +408,18 @@ public class ManagerAccount {
 	}
 	
 	private void logIntoBook(UUID playerUUID, String nameLog,String descriptionLog, Date date, TransactionType transactType, TypeLog logType){
-		ArrayList<BookLog> listBookLog = null;
-		if(!bankData.listBookLog.containsKey(playerUUID)){
-			listBookLog = new ArrayList<BookLog>();
-		} else {
-			listBookLog = bankData.listBookLog.get(playerUUID);
-		}
+		PlayerData playerData = getPlayerData(playerUUID);
 		manageDatabase.addLogEntry(playerUUID, nameLog,descriptionLog, date, transactType, logType);
 		int bookId = manageDatabase.getBookId(playerUUID, nameLog,descriptionLog, date, transactType, logType);
-		listBookLog.add(new BookLog(nameLog,descriptionLog, date, transactType, logType,bookId));
-		bankData.listBookLog.put(playerUUID, listBookLog);
+		playerData.listBookLog.add(new BookLog(nameLog,descriptionLog, date, transactType, logType,bookId));
+	}
+	
+	PlayerData getPlayerData(UUID playerUUID){
+		for(PlayerData playerData : bankData.listPlayerData){
+			if(playerData.playerUUID == playerUUID){
+				return playerData;
+			}
+		}
+		return null;
 	}
 }

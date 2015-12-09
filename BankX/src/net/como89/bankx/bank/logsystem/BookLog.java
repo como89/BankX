@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 
-public class BookLog {
+public class BookLog implements Cloneable {
 
 	
 	private String name;
@@ -31,5 +31,11 @@ public class BookLog {
 				+ "&0&l" +  "Name: &0" + name + "\n" 
 				+ "&0&l" + "Description: " + "&0" + description + "\n" 
 				+ "&l" + "ID_Log: " + "&0" + id;
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		BookLog clone = (BookLog) super.clone();
+		return clone;
 	}
 }

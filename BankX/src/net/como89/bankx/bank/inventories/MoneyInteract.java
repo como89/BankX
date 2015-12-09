@@ -32,7 +32,7 @@ public class MoneyInteract extends InventoryInteract {
 			player.openInventory(inv);
 		} else if(itemM.getDisplayName().equalsIgnoreCase(ChatColor.RED + "Cancel")){
 			player.closeInventory();
-			player.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId())));
+			player.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId()));
 		}
 	}
 

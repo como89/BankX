@@ -38,7 +38,7 @@ public class PlayerInteraction implements Listener {
 								p.openInventory(InventoriesBank.initialiseInventoryChangeBank(managerAccount.getBanksAccountOfPlayer(p.getUniqueId())));
 								return;
 							}
-							p.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount,bankName));
+							p.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount,bankName,p.getUniqueId()));
 							p.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.WELCOME_MSG.getMsg(managerAccount.getPlugin().getLanguage()),p.getName(),0.0,""));
 						} else {
 							p.sendMessage(ChatColor.RED + Language.NO_BANK_ACCOUNT.getMsg(managerAccount.getPlugin().getLanguage()));

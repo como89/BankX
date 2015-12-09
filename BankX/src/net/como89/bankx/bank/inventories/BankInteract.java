@@ -29,14 +29,14 @@ public class BankInteract extends InventoryInteract {
 				player.sendMessage(ChatColor.RED + Language.NO_CREATIVE.getMsg(managerAccount.getPlugin().getLanguage()));
 				return;
 			}	
-			HashMap<String,ItemStack[]> listeInventaire = managerAccount.getAllInventoryOfTheBank(managerAccount.getSelectedBankAccount(player.getUniqueId()));
+			HashMap<String,ItemStack[]> listeInventaire = managerAccount.getAllInventoryOfTheBank(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId());
 			Set<String> inventoryNames = listeInventaire.keySet();
 			inv = InventoriesBank.initialiseMultiInventory(inv,inventoryNames);
 			player.closeInventory();
 			player.openInventory(inv);
 		} else if (itemM.getDisplayName().contains("Money")) {
 			player.closeInventory();
-			player.openInventory(InventoriesBank.initialiseInventoryMoney(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId())));
+			player.openInventory(InventoriesBank.initialiseInventoryMoney(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId()));
 		} else if(itemM.getDisplayName().contains("BookLog")){
 			player.closeInventory();
 			managerAccount.giveBookLog(player);

@@ -105,7 +105,7 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 		listColumns.clear();
 		id = new Columns("ID_Bank", TypeData.INT, 0, false, true, true,false);
 		Columns player_id = new Columns("Player_ID",TypeData.INT,0,false, false, false,false);
-		Columns bank_name = new Columns("BankName",TypeData.VARCHAR,250,false, false, false,true);
+		Columns bank_name = new Columns("BankName",TypeData.VARCHAR,250,false, false, false,false);
 		Columns amount = new Columns("Amount",TypeData.DOUBLE,20,2,false,false,false,false);
 		listColumns.add(id);
 		listColumns.add(player_id);
@@ -346,13 +346,14 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 					UUID playerUUID = getPlayerUUID(playerId);
 					double amount = getAccountAmountOfPlayer(playerId);
 					ArrayList<Integer> idBanks = getBanksIdOfPlayer(playerId);
-					managerAccount.bankData.listPocket.put(playerUUID, amount);
+					PlayerData playerData = new PlayerData(playerUUID,amount);
 					if(idBanks.size() > 0){
 						ArrayList<BankAccount> listBanks = getListOfBankAccount(idBanks);
-						managerAccount.bankData.listBank.put(playerUUID, listBanks);
+						playerData.listBanksAccount = listBanks;
 					}
 					ArrayList<BookLog> listBook = getBookLogOfPlayer(playerId);
-					managerAccount.bankData.listBookLog.put(playerUUID, listBook);
+					playerData.listBookLog = listBook;
+					managerAccount.bankData.listPlayerData.add(playerData);
 				}
 			}
 		}
@@ -591,6 +592,9 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 		return id;
 	}
 	
+	/*
+	 * TODO: readd the inventories into the bank inventories list.
+	 */
 	private ArrayList<BankAccount> getListOfBankAccount(ArrayList<Integer> idBanks){
 		ArrayList<BankAccount> listBank = new ArrayList<BankAccount>();
 		for(int id : idBanks){
@@ -607,6 +611,7 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 						BankAccount bankAccount = new BankAccount(bankName,amount);
 						ArrayList<Inventory> listInv = getInventoryList(id);
 						for(Inventory inv : listInv){
+							//getBankInventoies method return a copy of the bank inventories. Need to be change.
 							bankAccount.getBankInventories().put(inv.getName(), inv.getContents());
 						}
 						listBank.add(bankAccount);
@@ -808,29 +813,13 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 								itemM.setDisplayName(itemDisplayName);
 								}
 								if(!itemLores.equals("null")){
-									String[] list = itemLores.split("|");
-									List<String> lore = new ArrayList<String>();
-									for(String listLore : list){
-										lore.add(listLore);
-									}
+									List<String> lore = Utils.getLoresInList(itemLores);
 									itemM.setLore(lore);
 								}
 								if(!itemEnchantment.equals("null")){
-									String[] enchant = itemEnchantment.split(":");
-									int i = 1;
-									Enchantment enchantment = null;
-									int level = 0;
-									for(String ligne : enchant){
-										if(i == 1){
-											enchantment = Enchantment.getByName(ligne);
-										}else if(i == 2) {
-											level = Integer.parseInt(ligne);
-										}
-										
-										if(i == 2){
-											itemM.addEnchant(enchantment, level,true);
-											i = 1;
-										}
+									Map<Enchantment,Integer> enchantmentMap = Utils.getEnchantmentMap(itemEnchantment);
+									for(Enchantment enchantment : enchantmentMap.keySet()){
+										itemM.addEnchant(enchantment, enchantmentMap.get(enchantment), true);
 									}
 								}
 								item.setItemMeta(itemM);

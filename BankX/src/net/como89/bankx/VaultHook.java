@@ -1,7 +1,6 @@
 package net.como89.bankx;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -212,7 +211,7 @@ public class VaultHook implements Economy {
 	public EconomyResponse createBank(String name, String playerName) {
 		OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
 		BankXResponse bankXRes = bankX_api.createBankAccount(name, offlinePlayer.getUniqueId());
-		double balance = bankX_api.getAmountInBankAccount(name);
+		double balance = bankX_api.getAmountInBankAccount(name,offlinePlayer.getUniqueId());
 		EconomyResponse ecoRes = null;
 		switch(bankXRes){
 		case SUCCESS :
@@ -233,92 +232,32 @@ public class VaultHook implements Economy {
 
 	@Override
 	public EconomyResponse deleteBank(String name) {
-		double balance = bankX_api.deleteBankAccount(name);
-		if(balance == -1){
-			return new EconomyResponse(0,balance,ResponseType.FAILURE,"Bank account not exist");
-		}
-		return new EconomyResponse(0,balance,ResponseType.SUCCESS,"Success");
+		return new EconomyResponse(0,0.0,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
 	}
 
 	@Override
 	public EconomyResponse bankBalance(String name) {
-		double balance = bankX_api.getAmountInBankAccount(name);
-		if(balance == -1){
-			return new EconomyResponse(0,balance,ResponseType.FAILURE,"Bank account not exist");
-		}
-		return new EconomyResponse(0,balance,ResponseType.SUCCESS,"Success");
+		return new EconomyResponse(0,0.0,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
 	}
 
 	@Override
 	public EconomyResponse bankHas(String name, double amount) {
-		double balance = bankX_api.getAmountInBankAccount(name);
-		if(balance == -1){
-			return new EconomyResponse(0,balance,ResponseType.FAILURE,"Bank account not exist");
-		}
-		if(balance < amount){
-			return new EconomyResponse(0,balance,ResponseType.FAILURE,"Not enought money.");
-		}
-		return new EconomyResponse(0,balance,ResponseType.SUCCESS,"Success");
+		return new EconomyResponse(0,0.0,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
 	}
 
 	@Override
 	public EconomyResponse bankWithdraw(String name, double amount) {
-		BankXResponse bankXRes = bankX_api.removeAmountBankAccount(name, amount);
-		double balance = bankX_api.getAmountInBankAccount(name);
-		EconomyResponse ecoRes = null;
-		switch(bankXRes){
-		case SUCCESS :
-			ecoRes = new EconomyResponse(0,balance,ResponseType.SUCCESS,"Success");
-			break;
-		case BANK_ACCOUNT_NOT_EXIST:
-			ecoRes = new EconomyResponse(0,balance,ResponseType.FAILURE,"Bank account not exist");
-			break;
-		case NOT_ENOUGHT_MONEY:
-			ecoRes = new EconomyResponse(0,balance,ResponseType.FAILURE,"Not enought money.");
-			break;
-		case ERROR:
-			ecoRes = new EconomyResponse(0,balance,ResponseType.FAILURE,"Error in the plugin");
-			break;
-		default:
-			ecoRes = new EconomyResponse(0,balance,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
-			break;
-		}
-		return ecoRes;
+		return new EconomyResponse(0,0.0,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
 	}
 
 	@Override
 	public EconomyResponse bankDeposit(String name, double amount) {
-		BankXResponse bankXRes = bankX_api.addAmountBankAccount(name, amount);
-		double balance = bankX_api.getAmountInBankAccount(name);
-		EconomyResponse ecoRes = null;
-		switch(bankXRes){
-		case SUCCESS :
-			ecoRes = new EconomyResponse(0,balance,ResponseType.SUCCESS,"Success");
-			break;
-		case BANK_ACCOUNT_NOT_EXIST:
-			ecoRes = new EconomyResponse(0,balance,ResponseType.FAILURE,"Bank account not exist");
-			break;
-		case ERROR:
-			ecoRes = new EconomyResponse(0,balance,ResponseType.FAILURE,"Error in the plugin");
-			break;
-		default:
-			ecoRes = new EconomyResponse(0,balance,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
-			break;
-		}
-		return ecoRes;
+		return new EconomyResponse(0,0.0,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
 	}
 
 	@Override
 	public EconomyResponse isBankOwner(String name, String playerName) {
-		UUID owner = bankX_api.getOwnerBank(name);
-		if(owner == null){
-			return new EconomyResponse(0,0,ResponseType.FAILURE,"Bank account not exist");
-		}
-		OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
-		if(owner.equals(offlinePlayer.getUniqueId())){
-			return new EconomyResponse(0,0,ResponseType.SUCCESS,"This player is the owner.");
-		}
-		return new EconomyResponse(0,0,ResponseType.FAILURE,"This player is not the owner of the bank account.");
+		return new EconomyResponse(-1,-1,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
 	}
 
 	@Override
@@ -328,7 +267,7 @@ public class VaultHook implements Economy {
 
 	@Override
 	public List<String> getBanks() {
-		return bankX_api.getListBank();
+		return null;
 	}
 
 	@Override
@@ -344,7 +283,7 @@ public class VaultHook implements Economy {
 	@Override
 	public EconomyResponse createBank(String bankName, OfflinePlayer player) {
 		BankXResponse bankXRes = bankX_api.createBankAccount(bankName, player.getUniqueId());
-		double balance = bankX_api.getAmountInBankAccount(bankName);
+		double balance = bankX_api.getAmountInBankAccount(bankName,player.getUniqueId());
 		EconomyResponse ecoRes = null;
 		switch(bankXRes){
 		case SUCCESS :
@@ -455,14 +394,7 @@ public class VaultHook implements Economy {
 
 	@Override
 	public EconomyResponse isBankOwner(String name, OfflinePlayer player) {
-		UUID owner = bankX_api.getOwnerBank(name);
-		if(owner == null){
-			return new EconomyResponse(0,0,ResponseType.FAILURE,"Bank account not exist");
-		}
-		if(owner.equals(player.getUniqueId())){
-			return new EconomyResponse(0,0,ResponseType.SUCCESS,"This player is the owner.");
-		}
-		return new EconomyResponse(0,0,ResponseType.FAILURE,"This player is not the owner of the bank account.");
+		return new EconomyResponse(-1,-1,ResponseType.NOT_IMPLEMENTED,"Not Implemented");
 	}
 
 	@Override

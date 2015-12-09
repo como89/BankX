@@ -30,7 +30,7 @@ public class ManageBanksInteract extends InventoryInteract {
 		player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.WELCOME_MSG.getMsg(managerAccount.getPlugin().getLanguage()),player.getName(),0.0,""));
 		managerAccount.selectBankAccount(player.getUniqueId(), bankName);
 		player.closeInventory();
-		player.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount, bankName));
+		player.openInventory(InventoriesBank.initialiseInventoryMenu(managerAccount, bankName,player.getUniqueId()));
 		}
 	}
 

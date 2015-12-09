@@ -57,7 +57,7 @@ public class KeyPadInteract extends InventoryInteract {
 			if(typeInventory.contains("Deposit")){
 				double amountInOperation = Double.parseDouble(managerAccount.getAmountInOperation(player.getUniqueId()));
 				if(managerAccount.getAmountPocket(player.getUniqueId()) >= amountInOperation){
-				managerAccount.addAmountBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()), amountInOperation);
+				managerAccount.addAmountBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId(), amountInOperation);
 				managerAccount.removeAmountPocket(player.getUniqueId(), amountInOperation);
 				managerAccount.clearAmountInOperation(player.getUniqueId());
 				player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.ADD_MONEY_BANK.getMsg(managerAccount.getPlugin().getLanguage()), player.getName(), amountInOperation,""));
@@ -70,9 +70,9 @@ public class KeyPadInteract extends InventoryInteract {
 			}
 			else if(typeInventory.contains("Withdraw")){
 				double amountInOperation = Double.parseDouble(managerAccount.getAmountInOperation(player.getUniqueId()));
-				if(managerAccount.getAmountInBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId())) >= amountInOperation){
+				if(managerAccount.getAmountInBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId()) >= amountInOperation){
 					managerAccount.addAmountPocket(player.getUniqueId(), amountInOperation);
-					managerAccount.removeAmountBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()), amountInOperation);
+					managerAccount.removeAmountBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId(), amountInOperation);
 					managerAccount.clearAmountInOperation(player.getUniqueId());
 					player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.REMOVE_MONEY_BANK.getMsg(managerAccount.getPlugin().getLanguage()), player.getName(), amountInOperation,""));
 					callCloseInventory(player);
@@ -85,16 +85,16 @@ public class KeyPadInteract extends InventoryInteract {
 			else if (typeInventory.contains("Transfer to")){
 				String name = inv.getTitle().replace("Transfer to ", "").replace(" bank", "").replace(""+ChatColor.AQUA, "").replace(""+ChatColor.GOLD, "");
 				double amountInOperation = Double.parseDouble(managerAccount.getAmountInOperation(player.getUniqueId()));
-				BankAccount bankAccount = managerAccount.getBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()));
-				if(managerAccount.getAmountInBankAccount(bankAccount.getName()) >= amountInOperation){
+				BankAccount bankAccount = managerAccount.getBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId());
+				if(managerAccount.getAmountInBankAccount(bankAccount.getName(),player.getUniqueId()) >= amountInOperation){
 					if(inv.getTitle().endsWith("bank")){
-						managerAccount.addAmountBankAccount(name, amountInOperation);
+						managerAccount.addAmountBankAccount(name,player.getUniqueId(), amountInOperation);
 					} else {
 						Player playerChoose = Utils.getOnlinePlayer(name);
 						managerAccount.addAmountPocket(playerChoose.getUniqueId(), amountInOperation);
 						playerChoose.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.RECEIVE_MONEY_FROM_PLAYER.getMsg(managerAccount.getPlugin().getLanguage()), player.getName(), amountInOperation, name));
 					}
-					managerAccount.removeAmountBankAccount(bankAccount.getName(), amountInOperation);
+					managerAccount.removeAmountBankAccount(bankAccount.getName(),player.getUniqueId(), amountInOperation);
 					managerAccount.clearAmountInOperation(player.getUniqueId());
 					player.sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.REMOVE_MONEY_BANK.getMsg(managerAccount.getPlugin().getLanguage()), player.getName(), amountInOperation, (inv.getTitle().endsWith("bank")?" bank.":" wallet.")));
 					callCloseInventory(player);
@@ -111,7 +111,7 @@ public class KeyPadInteract extends InventoryInteract {
 		}
 		else if(itemDisplayName.contains("Cancel")){
 			callCloseInventory(player);
-			callOpenInventory(player,InventoriesBank.initialiseInventoryMenu(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId())));
+			callOpenInventory(player,InventoriesBank.initialiseInventoryMenu(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId()));
 		}
 		
 	}

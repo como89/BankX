@@ -9,6 +9,7 @@ import net.como89.bankx.bank.BankAccount;
 import net.como89.bankx.bank.FileManager;
 import net.como89.bankx.bank.Language;
 import net.como89.bankx.bank.ManagerAccount;
+import net.como89.bankx.bank.PlayerData;
 import net.como89.bankx.bank.Utils;
 import net.como89.bankx.bank.api.BankXResponse;
 
@@ -37,11 +38,11 @@ public class TaskSystem extends BukkitRunnable {
 		case FEESYSTEM :
 			for(OfflinePlayer playerOffline : Bukkit.getOfflinePlayers()){
 				for(BankAccount bankAccount : managerAccount.getBanksAccountOfPlayer(playerOffline.getUniqueId())){
-					if(managerAccount.getAmountInBankAccount(bankAccount.getName()) != -1){
+					if(managerAccount.getAmountInBankAccount(bankAccount.getName(),playerOffline.getUniqueId()) != -1){
 						double amountItem = 0.0;
-						if((amountItem = getAmountOfAllItem(bankAccount.getName())) != 0.0){
+						if((amountItem = getAmountOfAllItem(bankAccount.getName(),playerOffline.getUniqueId())) != 0.0){
 							double total = amountItem * managerAccount.getPlugin().getFeeSystemAmount();
-							if(managerAccount.removeAmountBankAccount(bankAccount.getName(), total) == BankXResponse.SUCCESS){
+							if(managerAccount.removeAmountBankAccount(bankAccount.getName(),playerOffline.getUniqueId(), total) == BankXResponse.SUCCESS){
 								managerAccount.removeBankInList(bankAccount.getName());
 								if(playerOffline.isOnline()){
 									playerOffline.getPlayer().sendMessage(ChatColor.DARK_AQUA + managerAccount.replaceTag(Language.DEBITED_PAYMENT_ITEMS.getMsg(managerAccount.getPlugin().getLanguage()),bankAccount.getName(),total,""));
@@ -49,7 +50,7 @@ public class TaskSystem extends BukkitRunnable {
 							}
 							else{
 									if(managerAccount.checkBankInList(bankAccount.getName())){
-										managerAccount.clearInventory(bankAccount.getName());
+										managerAccount.clearInventory(bankAccount.getName(),playerOffline.getUniqueId());
 										if(playerOffline.isOnline()){
 										playerOffline.getPlayer().sendMessage(ChatColor.RED + Language.INVENTORY_EMPTY.getMsg(managerAccount.getPlugin().getLanguage()));
 										}
@@ -82,9 +83,9 @@ public class TaskSystem extends BukkitRunnable {
 		}
 	}
 	
-	private double getAmountOfAllItem(String bankName){
+	private double getAmountOfAllItem(String bankName,UUID playerUUID){
 		double amountItem = 0.0;
-		HashMap<String, ItemStack[]> listeInventaire = managerAccount.getAllInventoryOfTheBank(bankName);
+		HashMap<String, ItemStack[]> listeInventaire = managerAccount.getAllInventoryOfTheBank(bankName,playerUUID);
 		if(listeInventaire.size() > 0){
 			for(ItemStack[] inventaire : listeInventaire.values()){
 				for(ItemStack item : inventaire){
@@ -112,16 +113,17 @@ public class TaskSystem extends BukkitRunnable {
 				FileManager fileInvManager = new FileManager(file,true,managerAccount);
 				Inventory inv = fileInvManager.getInventoryFromSerializableString();
 				if(inv != null){
-					BankAccount bankAccount = managerAccount.getBankAccount(bank);
+					BankAccount bankAccount = managerAccount.getBankAccount(bank,UUID.fromString(bank));
 					if(bankAccount != null){
 					    bankAccount.modifyInventoryObjects(inv.getTitle(),inv.getContents());
 					}
 				}
 			}
 		}
-		for(UUID playerUUID : managerAccount.getAllPlayerAccount()){
+		for(PlayerData playerData : managerAccount.getAllPlayerAccounts()){
+			UUID playerUUID = playerData.getUniqueId();
 			for(BankAccount bankAccount : managerAccount.getBanksAccountOfPlayer(playerUUID)){
-				if(managerAccount.getAllInventoryOfTheBank(bankAccount.getName()) == null){
+				if(managerAccount.getAllInventoryOfTheBank(bankAccount.getName(),playerUUID).size() == 0){
 					 bankAccount.modifyInventoryObjects("Inventory", new ItemStack[54]);
 				}
 			}

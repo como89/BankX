@@ -1,6 +1,5 @@
 package net.como89.bankx.bank.api;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -88,10 +87,11 @@ public class BankXApi {
 	/**
 	 * This method delete the bank account of the player specified and return the amount of the bank account.
 	 * @param name -The bank name.
+	 * @param uuidPlayer - The uuid of the player.
 	 * @return double - Amount of the deleted bank account. If return -1, the player don't have a bank account.
 	 */
-	public double deleteBankAccount(String name){
-		return managerAccount.deleteBankAccount(name);
+	public double deleteBankAccount(String name,UUID uuidPlayer){
+		return managerAccount.deleteBankAccount(name,uuidPlayer);
 	}
 	
 	/**
@@ -100,8 +100,8 @@ public class BankXApi {
 	 * @param amount - The amount to add.
 	 * @return BankXResponse - SUCCESS, BANK_ACCOUNT_NOT_EXIST
 	 */
-	public BankXResponse addAmountBankAccount(String name,double amount){
-		return managerAccount.addAmountBankAccount(name, amount);
+	public BankXResponse addAmountBankAccount(String name,UUID playerUUID,double amount){
+		return managerAccount.addAmountBankAccount(name,playerUUID, amount);
 	}
 	/**
 	 * This method remove amount to the bank account.
@@ -109,8 +109,8 @@ public class BankXApi {
 	 * @param amount - The amount to remove.
 	 * @return BankXResponse - SUCCESS, BANK_ACCOUNT_NOT_EXIST, NOT_ENOUGHT_MONEY
 	 */
-	public BankXResponse removeAmountBankAccount(String name,double amount){
-		return managerAccount.removeAmountBankAccount(name, amount);
+	public BankXResponse removeAmountBankAccount(String name,UUID playerUUID,double amount){
+		return managerAccount.removeAmountBankAccount(name,playerUUID, amount);
 	}
 	
 	/**
@@ -118,8 +118,8 @@ public class BankXApi {
 	 * @param name - The bank name.
 	 * @return double - Return the amount in the bank account. If the amount is -1.0, the bank account don't exist.
 	 */
-	public double getAmountInBankAccount(String name){
-		return managerAccount.getAmountInBankAccount(name);
+	public double getAmountInBankAccount(String name, UUID playerUUID){
+		return managerAccount.getAmountInBankAccount(name,playerUUID);
 	}
 	/**
 	 * This method return a HashMap of all inventory of the bank.
@@ -127,24 +127,7 @@ public class BankXApi {
 	 * @return Map<String,ItemStack[]> - Return a Map with all inventory of the player.
 	 * Return a empty Map if the player don't have inventories and return null if the bank account not exist.
 	 */
-	public Map<String,ItemStack[]> getAllInventoryContent(String bankName){
-		return managerAccount.getAllInventoryOfTheBank(bankName);
-	}
-	
-	/**
-	 * This method return all Banks name in a list.
-	 * @return a list of all bank name.
-	 */
-	public List<String> getListBank(){
-		return managerAccount.getListBank();
-	}
-	
-	/**
-	 * This method will return the UUID of the owner of the bank account.
-	 * @param name - the name of the bank account.
-	 * @return UUID - the owner UUID.
-	 */
-	public UUID getOwnerBank(String name){
-		return managerAccount.getOwnerBank(name);
+	public Map<String,ItemStack[]> getAllInventoryContent(String bankName,UUID playerUUID){
+		return managerAccount.getAllInventoryOfTheBank(bankName,playerUUID);
 	}
 }

@@ -72,7 +72,12 @@ public class FileManager {
 								listBanks.add(new BankAccount(name, balance));
 							}
 							UUID playerUUID = UUID.fromString(lines[x]);
-							managerAccount.bankData.listBank.put(playerUUID, listBanks);
+							PlayerData playerData = managerAccount.getPlayerData(playerUUID);
+							if(playerData == null){
+								playerData = new PlayerData(playerUUID,0.0);
+								playerData.listBanksAccount = listBanks;
+								managerAccount.bankData.listPlayerData.add(playerData);
+							}
 					}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -106,8 +111,10 @@ public class FileManager {
 					} catch(IllegalArgumentException e){
 						e.printStackTrace();
 					}
-					managerAccount.bankData.listPocket.put(offlinePlayer.getUniqueId(),
-							Double.parseDouble(lines[1]));
+					PlayerData playerData = managerAccount.getPlayerData(offlinePlayer.getUniqueId());
+					if(playerData != null) {
+						playerData.moneyPocket = Double.parseDouble(lines[1]);
+					}
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {

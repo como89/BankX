@@ -43,7 +43,7 @@ public class TransfertPageInteract extends InventoryInteract {
 			}
 		} else if(item.getType() == Material.IRON_DOOR){
 			player.closeInventory();
-			player.openInventory(InventoriesBank.initialiseInventoryMoney(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId())));
+			player.openInventory(InventoriesBank.initialiseInventoryMoney(managerAccount, managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId()));
 		}
 	}
 
