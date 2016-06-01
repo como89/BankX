@@ -200,7 +200,7 @@ public class BankX extends JavaPlugin {
 		transferToDatabase = this.getConfig().getBoolean("mysql.transferToDatabase");
 		managerAccount = new ManagerAccount(this);
 		if(useMysql){
-				ManageDatabase manageDatabase = new ManageDatabase(this.getConfig().getString("mysql.prefix"),managerAccount);
+				ManageDatabase manageDatabase = new ManageDatabase(this.getConfig().getString("mysql.prefix"));
 				boolean connected = manageDatabase.connectToDatabase(this.getConfig().getString("mysql.host"),
 						this.getConfig().getInt("mysql.port"),
 						this.getConfig().getString("mysql.username"),
@@ -211,7 +211,7 @@ public class BankX extends JavaPlugin {
 					if(!manageDatabase.createTables()){
 						log.warning("Problems with database. Check your log.");
 					}
-					manageDatabase.loadAllData();
+					manageDatabase.loadAllData(managerAccount);
 					log.info("[Database] All data are load.");
 					if(transferToDatabase){
 						useMysql = false;
@@ -237,7 +237,7 @@ public class BankX extends JavaPlugin {
 				continue;
 			if(md.getPlayerId(playerUUID.toString()) != -1)
 				continue;
-			md.insertPlayer(playerUUID.toString(), managerAccount.getAmountPocket(playerUUID));
+			md.addPocketOfPlayer(playerUUID.toString(), managerAccount.getAmountPocket(playerUUID));
 			int playerID = md.getPlayerId(playerUUID.toString());
 			ArrayList<BankAccount> listBankAccounts = managerAccount.getBanksAccountOfPlayer(playerUUID);
 			if(listBankAccounts == null)

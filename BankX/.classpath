@@ -3,8 +3,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="C:/Users/nicho/Desktop/Citizens.jar"/>
-	<classpathentry kind="lib" path="C:/Users/nicho/Desktop/MyApi.jar"/>
 	<classpathentry kind="lib" path="C:/Users/nicho/Desktop/Vault.jar"/>
-	<classpathentry kind="lib" path="C:/Users/nicho/Desktop/Spigot_Builds/spigot-1.8.8.jar"/>
+	<classpathentry kind="lib" path="C:/Users/nicho/Desktop/Spigot_Builds/spigot-1.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/nicho/Desktop/MyApi.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

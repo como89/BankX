@@ -47,10 +47,10 @@ public class ManagerAccount {
 					fileBankManager = new FileManager(new File("plugins/BankX/Data/BankData.dat"),false,this);
 					filePocketManager = new FileManager(new File("plugins/BankX/Data/PocketData.dat"),false,this);
 				}
-				manageDatabase = new ManageDatabase("BankX_",this);
+				manageDatabase = new ManageDatabase("BankX_");
 				manageDatabase.openSQLFile("plugins/BankX/Data/database.db");
 				manageDatabase.createTables();
-				manageDatabase.loadAllData();
+				manageDatabase.loadAllData(this);
 				plugin.getLogger().info("[Database] All data are load.");
 			}
 	}
@@ -125,7 +125,7 @@ public class ManagerAccount {
 			bankData.listPlayerData.add(playerData);
 			if(manageDatabase != null){
 				if(manageDatabase.getPlayerId(playerUUID.toString()) == -1){
-					manageDatabase.insertPlayer(playerUUID.toString(), defaultAmount);
+					manageDatabase.addPocketOfPlayer(playerUUID.toString(), defaultAmount);
 					logIntoBook(playerUUID, "Create wallet", "Create wallet for " + Bukkit.getPlayer(playerUUID).getName() + ".", new Date(System.currentTimeMillis()), TransactionType.CREATE, TypeLog.MONEY);
 				}
 			}

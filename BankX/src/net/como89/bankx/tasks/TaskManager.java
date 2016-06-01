@@ -3,12 +3,19 @@ package net.como89.bankx.tasks;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
+
 public class TaskManager implements Runnable {
 
-	private ArrayList<Task> listTask;
+	private static boolean ready = true;
 	
-	public TaskManager(){
+	private ArrayList<Task> listTask;
+	private Plugin plugin;
+	
+	public TaskManager(Plugin plugin){
 		listTask = new ArrayList<>();
+		this.plugin = plugin;
 	}
 
 	@Override
@@ -19,20 +26,37 @@ public class TaskManager implements Runnable {
 			if(task.nbSecondsRequest > 0){
 				task.nbSecondsRequest--;
 			} else if(task.taskName.equalsIgnoreCase("database")) {
-				launchTask(task);
-				iterator.remove();
+				if(ready){
+					ready = false;
+					launchTaskAsynchronously(task);
+					iterator.remove();
+				}
 			} else {
 				launchTask(task);
 				task.nbSecondsRequest = task.timeSeconds;
 			}
 		}
 	}
-	
+
 	public void registerTask(Task task){
 		listTask.add(task);
 	}
 	
-	private void launchTask(Task task){
+
+	private void launchTask(Task task) {
 		
+		
+	}
+	
+	private void launchTaskAsynchronously(Task task){
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable(){
+			
+			@Override
+			public void run() {
+				task.update();
+				ready = true;
+			}
+			
+		});
 	}
 }

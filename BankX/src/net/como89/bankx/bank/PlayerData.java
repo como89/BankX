@@ -32,6 +32,18 @@ public class PlayerData implements Cloneable {
 		return playerUUID;
 	}
 	
+	public double getMoneyPocket(){
+		return moneyPocket;
+	}
+	
+	public ArrayList<BankAccount> getListBanks(){
+		return listBanksAccount;
+	}
+	
+	public ArrayList<BookLog> getListLog(){
+		return listBookLog;
+	}
+	
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		PlayerData clone = (PlayerData) super.clone();

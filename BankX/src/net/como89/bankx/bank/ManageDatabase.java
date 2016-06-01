@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import net.como89.bankx.bank.logsystem.BookLog;
-import net.como89.bankx.bank.logsystem.TransactionType;
-import net.como89.bankx.bank.logsystem.TypeLog;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -31,22 +27,28 @@ import ca.como89.myapi.api.mysql.TypeCondition;
 import ca.como89.myapi.api.mysql.TypeData;
 import ca.como89.myapi.api.mysql.exception.IllegalTypeException;
 import ca.como89.myapi.api.mysql.exception.LengthTableException;
+import net.como89.bankx.bank.logsystem.BookLog;
+import net.como89.bankx.bank.logsystem.TransactionType;
+import net.como89.bankx.bank.logsystem.TypeLog;
 
 public class ManageDatabase {
+	
+	private static ManageDatabase manageDatabase;
 
 	private MyApi myapi;
 	private String prefix;
-	private ManagerAccount managerAccount;
 	
-	/*stat.execute("CREATE TABLE IF NOT EXISTS PLAYERS (ID INT NOT NULL AUTO_INCREMENT,"
-	+ "PLAYER VARCHAR(120) NOT NULL,AMOUNT_POCKET DOUBLE PRECISION NOT NULL, PRIMARY KEY (ID))");
-stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO_INCREMENT,"
-	+ "PLAYER_ID INT NOT NULL, BANKNAME VARCHAR(120) NOT NULL, AMOUNT DOUBLE PRECISION NOT NULL, CONSTRAINT FK_PLAYER_NUMBER FOREIGN KEY (PLAYER_ID) REFERENCES PLAYERS(ID), PRIMARY KEY(ID_BANK))");*/
-	
-	public ManageDatabase(String prefix,ManagerAccount managerAccount){
+	private ManageDatabase(String prefix){
 		myapi = MyApiLib.createInstance("Bankx");
 		this.prefix = prefix;
-		this.managerAccount = managerAccount;
+	}
+	
+	public static void initDatabaseInstance(String prefix) {
+		manageDatabase = new ManageDatabase(prefix);
+	}
+	
+	public static ManageDatabase getDatabaseInstance() {
+		return manageDatabase;
 	}
 	
 	public boolean connectToDatabase(String host, int port, String userName, String password, String database){
@@ -186,7 +188,7 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 		return noError;
 	}
 	
-	public void insertPlayer(String UUID,double amount){
+	public void addPocketOfPlayer(String UUID,double amount){
 		try {
 			TableProperties tableProperties = new TableProperties(prefix+"Players",new String[] {"UUID","Amount_Pocket"},new Object[] {UUID,amount});
 			myapi.insertValues(tableProperties);
@@ -215,10 +217,12 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 		}
 	}
 	
-	public void updateAmountBank(String bankName, double amount){
+	public void updateAmountBank(String bankName, double amount,String UUID){
 		try {
 			TableProperties tableProperties = new TableProperties(prefix+"BankAccount",new String[]{"Amount"},new Object[]{amount});
-			Condition condition = new Condition("BankName",bankName,TypeCondition.EQUALS);
+			int playerID = getPlayerId(UUID);
+			Condition condition = new Condition(new String[]{"BankName","Player_ID"},new Object[]{bankName,playerID},
+					new TypeCondition[]{TypeCondition.EQUALS,TypeCondition.EQUALS},new boolean[]{true});
 			myapi.updateValues(tableProperties, condition);
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
@@ -229,18 +233,23 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 		}
 	}
 	
-	public void deleteBankAccount(String bankName){
+	public void deleteBankAccount(String bankName,String UUID){
 		try {
-			Condition condition = new Condition("BankName",bankName,TypeCondition.EQUALS);
+			int playerID = getPlayerId(UUID);
+			Condition condition = new Condition(new String[]{"BankName","Player_ID"},new Object[]{bankName,playerID},
+					new TypeCondition[]{TypeCondition.EQUALS,TypeCondition.EQUALS},new boolean[]{true});
 			myapi.deleteRow(prefix+"BankAccount", condition);
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		} catch (IllegalTypeException e) {
 			e.printStackTrace();
+		} catch (LengthTableException e) {
+			e.printStackTrace();
 		} 
 	}
 	
-	public void createBankAccount(String bankName, int playerID){
+	public void createBankAccount(String bankName, String uuid){
+		int playerID = getPlayerId(uuid);
 		try {
 			TableProperties tableProperties = new TableProperties(prefix+"BankAccount",new String[]{"Player_ID","BankName","Amount"},new Object[]{playerID,bankName,0.0});
 			myapi.insertValues(tableProperties);
@@ -294,8 +303,27 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 			
 		}
 	}
+
+	public void loadAllData(ManagerAccount managerAccount) {
+			List<Integer> listPlayerId = getAllPlayerId();
+			for(int playerId : listPlayerId){
+				if(playerId != -1){
+					UUID playerUUID = getPlayerUUID(playerId);
+					double amount = getAccountAmountOfPlayer(playerId);
+					ArrayList<Integer> idBanks = getBanksIdOfPlayer(playerId);
+					PlayerData playerData = new PlayerData(playerUUID,amount);
+					if(idBanks.size() > 0){
+						ArrayList<BankAccount> listBanks = getListOfBankAccount(idBanks);
+						playerData.listBanksAccount = listBanks;
+					}
+					ArrayList<BookLog> listBook = getBookLogOfPlayer(playerId);
+					playerData.listBookLog = listBook;
+					managerAccount.bankData.listPlayerData.add(playerData);
+				}
+			}
+		}
 	
-	public int getBankId(String bankName){
+	private int getBankId(String bankName){
 		int id = -1;
 		TableProperties tableProperties = new TableProperties(prefix+"BankAccount",new String [] {"ID_Bank"});
 		Condition condition;
@@ -317,7 +345,7 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 		return id;
 	}
 	
-	public int getPlayerId(String UUID){
+	private int getPlayerId(String UUID){
 		int id = -1;
 		TableProperties tableProperties = new TableProperties(prefix+"Players",new String [] {"ID"});
 		Condition condition;
@@ -338,25 +366,6 @@ stat.execute("CREATE TABLE IF NOT EXISTS BANK_ACCOUNT (ID_BANK INT NOT NULL AUTO
 		}
 		return id;
 	}
-
-	public void loadAllData() {
-			List<Integer> listPlayerId = getAllPlayerId();
-			for(int playerId : listPlayerId){
-				if(playerId != -1){
-					UUID playerUUID = getPlayerUUID(playerId);
-					double amount = getAccountAmountOfPlayer(playerId);
-					ArrayList<Integer> idBanks = getBanksIdOfPlayer(playerId);
-					PlayerData playerData = new PlayerData(playerUUID,amount);
-					if(idBanks.size() > 0){
-						ArrayList<BankAccount> listBanks = getListOfBankAccount(idBanks);
-						playerData.listBanksAccount = listBanks;
-					}
-					ArrayList<BookLog> listBook = getBookLogOfPlayer(playerId);
-					playerData.listBookLog = listBook;
-					managerAccount.bankData.listPlayerData.add(playerData);
-				}
-			}
-		}
 	
 	private UUID getPlayerUUID(int playerId) {
 		String uuid = "";

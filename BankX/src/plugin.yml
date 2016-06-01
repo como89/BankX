@@ -1,10 +1,10 @@
 main: net.como89.bankx.BankX
 name: BankX
-version: 0.5b DEVBUILD 4
+version: 0.5b DEVBUILD 6
 authors: [como89,madtomic]
-softdepend: [Citizens]
+softdepend: [Citizens,Vault]
+loadbefore: [dtlTraders]
 depend: [MyApi]
-loadbefore: [Vault]
 commands:
     money:
         description: You can see your pocket money and your bank account money and you can give to someone else some money with your pocket money.
