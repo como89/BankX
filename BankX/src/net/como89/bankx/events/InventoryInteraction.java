@@ -23,6 +23,9 @@ import net.como89.bankx.bank.inventories.ManageBanksInteract;
 import net.como89.bankx.bank.inventories.MoneyInteract;
 import net.como89.bankx.bank.inventories.TransfertPageInteract;
 import net.como89.bankx.bank.inventories.TransfertTypeInteract;
+import net.como89.bankx.tasks.DatabaseTask;
+import net.como89.bankx.tasks.databaserequest.ChangeInventory;
+import net.como89.bankx.tasks.databaserequest.UpdateInventoryName;
 
 public class InventoryInteraction implements Listener {
 	
@@ -46,7 +49,7 @@ public class InventoryInteraction implements Listener {
 			else{
 			BankAccount bankAccount = managerAccount.getBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId());
 			boolean existInventory = false;
-			if(bankAccount == null || bankAccount.getBankInventories() == null)
+			if(bankAccount == null)
 				return;
 			for(String inventoryName : bankAccount.getBankInventories().keySet()){
 				if(inventoryName.equals(event.getInventory().getTitle())){
@@ -55,11 +58,9 @@ public class InventoryInteraction implements Listener {
 				}
 			}
 				if(existInventory){
-					bankAccount.modifyInventoryObjects(event.getInventory().getTitle(), event.getInventory().getContents());
-						int id_Bank = managerAccount.getManageDatabase().getBankId(bankAccount.getName());
-						if(!managerAccount.getManageDatabase().insertInventory(event.getInventory(), id_Bank)){
-							 managerAccount.getManageDatabase().updateInventory(event.getInventory(), id_Bank);
-						}
+					bankAccount.putInventoriesItems(event.getInventory().getTitle(), event.getInventory().getContents(),event.getInventory().getMaxStackSize());
+					DatabaseTask dt = new DatabaseTask("Database",0,new ChangeInventory(player.getUniqueId(),event.getInventory().getTitle(),bankAccount.getInventoryItems(event.getInventory().getTitle())));	
+					managerAccount.getTaskManager().registerTask(dt);
 					closeInventory(player);
 				}
 			}

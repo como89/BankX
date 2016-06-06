@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import net.como89.bankx.bank.logsystem.BookLog;
 
-public class PlayerData implements Cloneable {
+public class PlayerData {
 
 	UUID playerUUID;
 	
@@ -42,21 +42,5 @@ public class PlayerData implements Cloneable {
 	
 	public ArrayList<BookLog> getListLog(){
 		return listBookLog;
-	}
-	
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		PlayerData clone = (PlayerData) super.clone();
-		ArrayList<BankAccount> cloneListBanks = new ArrayList<BankAccount>();
-		for(BankAccount bank : listBanksAccount){
-			cloneListBanks.add((BankAccount) bank.clone());
-		}
-		ArrayList<BookLog> cloneListBooks = new ArrayList<BookLog>();
-		for(BookLog book : listBookLog){
-			cloneListBooks.add((BookLog)book.clone());
-		}
-		clone.listBanksAccount = cloneListBanks;
-		clone.listBookLog = cloneListBooks;
-		return clone;
 	}
 }

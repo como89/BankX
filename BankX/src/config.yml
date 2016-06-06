@@ -21,8 +21,6 @@ feeSystem: #DISABLE FOR NOW, NEED TO BE RECODE
 mysql:
         #Do you want to use the MySQL option? If false, will use the SQL Option.
          use: false
-        #Do you want to transfer data from file to database?
-         transferToDatabase: false
         #The host of MySQL server.
          host: 127.0.0.1
         #The port of MySQL server. (Default to 3306)

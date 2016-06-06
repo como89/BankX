@@ -29,7 +29,7 @@ public class InventoriesMenuInteract extends InventoryInteract {
 		if(itemM.getDisplayName().equalsIgnoreCase(ChatColor.AQUA + "Add inventory")){
 			BankAccount bankAccount = managerAccount.getBankAccount(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId());
 			String inventoryName = "Inventory" + bankAccount.getBankInventories().size();
-			bankAccount.modifyInventoryObjects(inventoryName,new ItemStack[9]);
+			bankAccount.putInventoriesItems(inventoryName,new ItemStack[9],64);
 			player.closeInventory();
 			HashMap<String,ItemStack[]> listeInventaire = managerAccount.getAllInventoryOfTheBank(managerAccount.getSelectedBankAccount(player.getUniqueId()),player.getUniqueId());
 			Set<String> inventoryNames = listeInventaire.keySet();

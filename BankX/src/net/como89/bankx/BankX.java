@@ -1,15 +1,11 @@
 package net.como89.bankx;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.trait.TraitInfo;
-import net.como89.bankx.bank.BankAccount;
-import net.como89.bankx.bank.ManageDatabase;
 import net.como89.bankx.bank.ManagerAccount;
 import net.como89.bankx.bank.api.BankXApi;
 import net.como89.bankx.bank.inventories.InventoriesBank;
@@ -19,18 +15,11 @@ import net.como89.bankx.events.InventoryInteraction;
 import net.como89.bankx.events.PlayerConnection;
 import net.como89.bankx.events.PlayerInteraction;
 import net.como89.bankx.npc.Banker;
-import net.como89.bankx.tasks.TaskSystem;
-import net.como89.bankx.tasks.TaskType;
 
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-@SuppressWarnings("deprecation")
 public class BankX extends JavaPlugin {
 	
 	private static Logger log;
@@ -43,7 +32,6 @@ public class BankX extends JavaPlugin {
 	private boolean useFeeSystem;
 	private boolean countStack;
 	private boolean useMysql;
-	private boolean transferToDatabase;
 	
 	private double defaultAmount;
 	private double feeSystemAmount;
@@ -86,11 +74,6 @@ public class BankX extends JavaPlugin {
 			logInfo("Use Minecraft NPC!");
 		}
 		bankXApi = new BankXApi(managerAccount);
-		if(!(new File("plugins/BankX/Data/database.db").exists()) && new File("plugins/BankX/Data/BankData.dat").exists()){
-		TaskSystem ts =  new TaskSystem(managerAccount,TaskType.LOADING_DATA);
-		ts.run();
-		this.transferToDatabase();
-		}
 //		if(useFeeSystem){
 //			logInfo("Start FeeSystem!");
 //			if(feeSystem.equalsIgnoreCase("minutes")){
@@ -116,6 +99,7 @@ public class BankX extends JavaPlugin {
 		if(this.getServer().getPluginManager().getPlugin("Vault") != null){
 		VaultHook.hookToVault(this);
 		}
+		
 		logInfo("Made by <<" + pdf.getAuthors().get(0) + ">> and test by <<"+pdf.getAuthors().get(1)+">>");
 		logInfo("Its take " + (System.currentTimeMillis() - timeStart) + " milliseconds to load this plugin.");
 		logInfo("Plugin enable!");
@@ -128,9 +112,6 @@ public class BankX extends JavaPlugin {
 	@Override
 	public void onDisable()
 	{
-		if(managerAccount != null){
-		managerAccount.getManageDatabase().disconnect();
-		}
 		logInfo("Plugin disable!");
 	}
 	
@@ -197,62 +178,20 @@ public class BankX extends JavaPlugin {
 			countStack = this.getConfig().getBoolean("feeSystem.countStack");
 		}
 		useMysql = this.getConfig().getBoolean("mysql.use");
-		transferToDatabase = this.getConfig().getBoolean("mysql.transferToDatabase");
 		managerAccount = new ManagerAccount(this);
-		if(useMysql){
-				ManageDatabase manageDatabase = new ManageDatabase(this.getConfig().getString("mysql.prefix"));
-				boolean connected = manageDatabase.connectToDatabase(this.getConfig().getString("mysql.host"),
-						this.getConfig().getInt("mysql.port"),
-						this.getConfig().getString("mysql.username"),
-						this.getConfig().getString("mysql.password"),
-						this.getConfig().getString("mysql.database"));
-				if(connected){
-					managerAccount.setManageDatabase(manageDatabase);
-					if(!manageDatabase.createTables()){
-						log.warning("Problems with database. Check your log.");
-					}
-					manageDatabase.loadAllData(managerAccount);
-					log.info("[Database] All data are load.");
-					if(transferToDatabase){
-						useMysql = false;
-						managerAccount = new ManagerAccount(this);
-						managerAccount.setManageDatabase(manageDatabase);
-						TaskSystem ts =  new TaskSystem(managerAccount,TaskType.LOADING_DATA);
-						ts.run();				
-						log.info("Transfer to database wallet accounts, bank accounts and inventories ...");
-						transferToDatabase();
-						log.info("Transfer finish.");
-						log.warning("Please restart your server with transferToDatabase option to false.");
-						this.setEnabled(false);
-					}
-				}
-		}
-	}
-	
-	private void transferToDatabase(){
-		ManageDatabase md = managerAccount.getManageDatabase();
-		for(OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()){
-			UUID playerUUID = offlinePlayer.getUniqueId();
-			if(!managerAccount.hasPocketAccount(playerUUID))
-				continue;
-			if(md.getPlayerId(playerUUID.toString()) != -1)
-				continue;
-			md.addPocketOfPlayer(playerUUID.toString(), managerAccount.getAmountPocket(playerUUID));
-			int playerID = md.getPlayerId(playerUUID.toString());
-			ArrayList<BankAccount> listBankAccounts = managerAccount.getBanksAccountOfPlayer(playerUUID);
-			if(listBankAccounts == null)
-				continue;
-			for(BankAccount bankAccount : listBankAccounts){
-				if(md.getBankId(bankAccount.getName()) != -1)
-					continue;
-			md.createBankAccount(bankAccount.getName(), playerID);
-			int bank_id = md.getBankId(bankAccount.getName());
-			for(String inventoriesName : bankAccount.getBankInventories().keySet()){
-				ItemStack[] items = bankAccount.getBankInventories().get(inventoriesName);
-				Inventory inv = Bukkit.createInventory(null, items.length,inventoriesName);
-				md.insertInventory(inv, bank_id);
-			}
-			}
-		}
+//		if(useMysql){
+//				boolean connected = manageDatabase.connectToDatabase(this.getConfig().getString("mysql.host"),
+//						this.getConfig().getInt("mysql.port"),
+//						this.getConfig().getString("mysql.username"),
+//						this.getConfig().getString("mysql.password"),
+//						this.getConfig().getString("mysql.database"));
+//				if(connected){
+//					if(!manageDatabase.createTables()){
+//						log.warning("Problems with database. Check your log.");
+//					}
+//					manageDatabase.loadAllData(managerAccount);
+//					log.info("[Database] All data are load.");
+//				}
+//		}
 	}
 }

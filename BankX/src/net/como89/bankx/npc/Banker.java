@@ -14,12 +14,14 @@ import net.como89.bankx.bank.ManagerAccount;
 import net.como89.bankx.bank.inventories.InventoriesBank;
 
 public class Banker extends Trait {
-
+	
 	private ManagerAccount managerAccount;
+
+	@SuppressWarnings("deprecation")
 	public Banker() {
 		super("Banker");
 		plugin = (BankX) Bukkit.getServer().getPluginManager().getPlugin("BankX");
-		managerAccount = new ManagerAccount(plugin);
+		managerAccount = ManagerAccount.getInstance();
 	}
 
 	BankX plugin = null;

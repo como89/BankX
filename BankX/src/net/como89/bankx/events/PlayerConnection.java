@@ -21,7 +21,7 @@ public class PlayerConnection implements Listener {
 	public void onPlayerRejoinServer(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		UUID playerUUID = player.getUniqueId();
-		if(managerAccount.hasPocketAccount(playerUUID)){
+		if(!managerAccount.hasPocketAccount(playerUUID)){
 			managerAccount.createPocket(playerUUID);
 		}
 	}

@@ -9,6 +9,7 @@ public abstract class Request {
 	public Request(UUID uuid) {
 		this.uuid = uuid;
 	}
-	
+
 	public abstract void doAction();
+
 }

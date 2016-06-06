@@ -1,5 +1,6 @@
 package net.como89.bankx.bank;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -8,24 +9,25 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import net.como89.bankx.bank.items.InventoryItems;
 import net.como89.bankx.bank.items.Items;
 
-public class BankAccount implements Cloneable {
+public class BankAccount {
 
 	private String accountName;
 	private double balance;
-	private HashMap<String,Items[]> listInventaire;
+	ArrayList<InventoryItems> listInventaire;
 	
 	public BankAccount(String accountName){
 		this.accountName = accountName;
 		this.balance = 0.0;
-		listInventaire = new HashMap<String,Items[]>();
+		listInventaire = new ArrayList<>();
 	}
 	
 	public BankAccount(String accountName,double balance){
 		this.accountName = accountName;
 		this.balance = balance;
-		listInventaire = new HashMap<String,Items[]>();
+		listInventaire = new ArrayList<>();
 	}
 	
 	public double getBalance(){
@@ -36,8 +38,8 @@ public class BankAccount implements Cloneable {
 		return accountName;
 	}
 	
-	public void modifyInventoryObjects(String inventoryName,
-			ItemStack[] itemList) {
+	public void putInventoriesItems(String inventoryName,
+			ItemStack[] itemList,int maxStackSize) {
 		Items[] items = new Items[itemList.length];
 		for(int i = 0; i < items.length;i++){
 			if(itemList[i] == null)
@@ -61,13 +63,19 @@ public class BankAccount implements Cloneable {
 			}
 			items[i] = new Items(displayName,item.getType().toString(),loreList,enchantmentList,item.getAmount());
 		}
-		listInventaire.put(inventoryName, items);
+		InventoryItems inv = getInventoryItems(inventoryName);
+		if(inv == null) {
+		inv = new InventoryItems(inventoryName,itemList.length);
+		}
+		inv.setMaxStackSize(maxStackSize);
+		inv.setContents(items);
+		listInventaire.add(inv);
 	}
 	
 	public HashMap<String, ItemStack[]> getBankInventories() {
 		HashMap<String, ItemStack[]> listBankInventories = new HashMap<String,ItemStack[]>();
-		for(String inventoryName : listInventaire.keySet()){
-			Items[] items = listInventaire.get(inventoryName);
+		for(InventoryItems inv : listInventaire){
+			Items[] items = inv.getContents();
 			ItemStack[] listItems = new ItemStack[items.length];
 			for(int i = 0; i < listItems.length;i++){
 				if(items[i] == null)
@@ -75,38 +83,13 @@ public class BankAccount implements Cloneable {
 				
 				listItems[i] = Utils.getItemInItemStack(items[i]);
 			}
-			listBankInventories.put(inventoryName, listItems);
+			listBankInventories.put(inv.getName(), listItems);
 		}
 		return listBankInventories;
 	}
 	
 	public void clearInventory(){
 		listInventaire.clear();
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		BankAccount clone = (BankAccount) super.clone();
-		Object ob = listInventaire.clone();
-		if(!(ob instanceof HashMap)){
-			throw new CloneNotSupportedException();
-		}
-		HashMap<String,Items[]> listInventories = (HashMap<String,Items[]>) ob;
-		Set<String> listInvName = listInventories.keySet();
-		for(String invName : listInvName){
-			Items[] items = clone.listInventaire.get(invName);
-			Items[] listItems = new Items[items.length];
-			for(int i = 0; i < items.length;i++){
-				Items item = items[i];
-				if(item == null)
-					continue;
-				listItems[i] = (Items) item.clone();
-			}
-			listInventories.put(invName, listItems);
-		}
-		clone.listInventaire = listInventories;
-		return clone;
 	}
 	
 	void setBalance(double amount){
@@ -117,7 +100,12 @@ public class BankAccount implements Cloneable {
 		this.accountName = name;
 	}
 	
-	HashMap<String,Items[]> getBankItems(){
-		return listInventaire;
+	public InventoryItems getInventoryItems (String inventoryName) {
+		for(InventoryItems inv : listInventaire) {
+			if(inv.getName().equals(inventoryName)) {
+				return inv;
+			}
+		}
+		return null;
 	}
 }

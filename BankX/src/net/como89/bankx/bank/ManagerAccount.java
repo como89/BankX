@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -18,24 +19,33 @@ import org.bukkit.inventory.meta.BookMeta;
 
 import net.como89.bankx.BankX;
 import net.como89.bankx.bank.api.BankXResponse;
+import net.como89.bankx.bank.items.InventoryItems;
 import net.como89.bankx.bank.logsystem.BookLog;
 import net.como89.bankx.bank.logsystem.TransactionType;
 import net.como89.bankx.bank.logsystem.TypeLog;
+import net.como89.bankx.tasks.DatabaseTask;
+import net.como89.bankx.tasks.TaskManager;
+import net.como89.bankx.tasks.databaserequest.CreateBankAccount;
+import net.como89.bankx.tasks.databaserequest.CreatePocket;
+import net.como89.bankx.tasks.databaserequest.DeleteBankAccount;
+import net.como89.bankx.tasks.databaserequest.LogEntry;
+import net.como89.bankx.tasks.databaserequest.UpdateBankAmount;
+import net.como89.bankx.tasks.databaserequest.UpdateBankName;
+import net.como89.bankx.tasks.databaserequest.UpdateInventoryName;
+import net.como89.bankx.tasks.databaserequest.UpdatePocket;
 
-@SuppressWarnings("deprecation")
 public class ManagerAccount {
 
 	private BankX plugin;
 	BankXData bankData;
-	private ManageDatabase manageDatabase;
-	private FileManager filePocketManager;
-	private FileManager fileBankManager;
+	TaskManager taskManager;
 	private static final DecimalFormat df = new DecimalFormat("0.00");
+	
+	private static ManagerAccount instance;
 
 	public ManagerAccount(BankX plugin) {
 		this.plugin = plugin;
 		this.bankData = new BankXData();
-		this.manageDatabase = null;
 			if(!plugin.isUseMySQL()){
 				File fileSQL = new File("plugins/BankX/Data/database.db");
 				if(!fileSQL.exists()){
@@ -44,35 +54,34 @@ public class ManagerAccount {
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-					fileBankManager = new FileManager(new File("plugins/BankX/Data/BankData.dat"),false,this);
-					filePocketManager = new FileManager(new File("plugins/BankX/Data/PocketData.dat"),false,this);
 				}
-				manageDatabase = new ManageDatabase("BankX_");
-				manageDatabase.openSQLFile("plugins/BankX/Data/database.db");
-				manageDatabase.createTables();
-				manageDatabase.loadAllData(this);
-				plugin.getLogger().info("[Database] All data are load.");
+				ManageDatabase.initDatabaseInstance("BankX_", "plugins/BankX/Data/database.db");
+			} else {
+				
 			}
+			ManageDatabase md = ManageDatabase.getDatabaseInstance();
+			md.connectToDatabase();
+			md.createTables();
+			md.loadAllData(this);
+			md.disconnect();
+			plugin.getLogger().info("[Database] All data are load.");
+			taskManager = new TaskManager(plugin);
+			plugin.getLogger().info("[TaskManager] TaskManager is ready and run now.");
+			Bukkit.getScheduler().runTaskTimer(plugin, taskManager, 20L, 20L);
+			instance = this;
+	}
+	
+	@Deprecated
+	public static ManagerAccount getInstance() {
+		return instance;
 	}
 
 	public BankX getPlugin() {
 		return plugin;
 	}
 	
-	public ManageDatabase getManageDatabase(){
-		return manageDatabase;
-	}
-	
-	public FileManager getBankManager(){
-		return fileBankManager;
-	}
-	
-	public FileManager getPocketManager(){
-		return filePocketManager;
-	}
-	
-	public void setManageDatabase(ManageDatabase manageDatabase){
-		this.manageDatabase = manageDatabase;
+	public TaskManager getTaskManager() {
+		return taskManager;
 	}
 
 	public double getAmountPocket(UUID playerUUID) {	
@@ -88,11 +97,8 @@ public class ManagerAccount {
 				double moneyTotal = moneyPocket - money;
 				playerData.moneyPocket = moneyTotal;
 				logIntoBook(playerUUID, "Remove money in wallet.", "Remove " + money + " " + plugin.getRepresentMoney() + " in " + Bukkit.getPlayer(playerUUID).getName() + " wallet.", new Date(System.currentTimeMillis()), TransactionType.REMOVE, TypeLog.MONEY);
-				if(manageDatabase != null){
-					if(manageDatabase.getPlayerId(playerUUID.toString()) != -1){
-						manageDatabase.updateAmountPocket(playerUUID.toString(),moneyTotal);
-					}
-				}
+				DatabaseTask dt = new DatabaseTask("Database",0,new UpdatePocket(playerUUID, moneyTotal));
+				taskManager.registerTask(dt);
 				return BankXResponse.SUCCESS;
 			}
 			return BankXResponse.NOT_ENOUGHT_MONEY;
@@ -107,11 +113,8 @@ public class ManagerAccount {
 			double moneyTotal = moneyPocket + money;
 			playerData.moneyPocket = moneyTotal;
 			logIntoBook(playerUUID, "Add money in wallet.", "Add " + money + " " + plugin.getRepresentMoney() + " in " + Bukkit.getPlayer(playerUUID).getName() + " wallet.", new Date(System.currentTimeMillis()), TransactionType.ADD, TypeLog.MONEY);
-			if(manageDatabase != null){
-				if(manageDatabase.getPlayerId(playerUUID.toString()) != -1){
-					manageDatabase.updateAmountPocket(playerUUID.toString(), moneyTotal);
-				}
-			}
+			DatabaseTask dt = new DatabaseTask("Database",0,new UpdatePocket(playerUUID, moneyTotal));
+			taskManager.registerTask(dt);
 			return BankXResponse.SUCCESS;
 		}
 		return BankXResponse.ACCOUNT_NOT_EXIST;
@@ -123,12 +126,8 @@ public class ManagerAccount {
 			double defaultAmount = plugin.getDefaultAmount();
 			playerData = new PlayerData(playerUUID,defaultAmount);
 			bankData.listPlayerData.add(playerData);
-			if(manageDatabase != null){
-				if(manageDatabase.getPlayerId(playerUUID.toString()) == -1){
-					manageDatabase.addPocketOfPlayer(playerUUID.toString(), defaultAmount);
-					logIntoBook(playerUUID, "Create wallet", "Create wallet for " + Bukkit.getPlayer(playerUUID).getName() + ".", new Date(System.currentTimeMillis()), TransactionType.CREATE, TypeLog.MONEY);
-				}
-			}
+			DatabaseTask dt = new DatabaseTask("Database",0,new CreatePocket(playerUUID,defaultAmount));
+			taskManager.registerTask(dt);
 		}
 	}
 
@@ -147,15 +146,10 @@ public class ManagerAccount {
 			ArrayList<BankAccount> listAccount = new ArrayList<BankAccount>();
 			listAccount.add(new BankAccount(name));
 			playerData.listBanksAccount = listAccount;
-			if(manageDatabase != null){
-				if(manageDatabase.getBankId(name) != -1){
-					return BankXResponse.BANK_ACCOUNT_ALREADY_EXIST;
-				}
-				logIntoBook(playerUUID, "Create bank account.", "Create "+name+" bank account.", 
+			logIntoBook(playerUUID, "Create bank account.", "Create "+name+" bank account.", 
 						new Date(System.currentTimeMillis()), TransactionType.CREATE, TypeLog.MONEY);
-				int playerID = manageDatabase.getPlayerId(playerUUID.toString());
-				manageDatabase.createBankAccount(name, playerID);
-			}
+			DatabaseTask dt = new DatabaseTask("Database",0,new CreateBankAccount(playerUUID,name));
+			taskManager.registerTask(dt);
 			return BankXResponse.SUCCESS;
 		} else {
 			boolean exist = false;
@@ -167,15 +161,10 @@ public class ManagerAccount {
 			}
 			if (!exist) {
 				playerData.listBanksAccount.add(new BankAccount(name));
-				if(manageDatabase != null){
-					if(manageDatabase.getBankId(name) != -1){
-						return BankXResponse.BANK_ACCOUNT_ALREADY_EXIST;
-					}
-					logIntoBook(playerUUID, "Create bank account.", "Create "+name+" bank account.", 
+				logIntoBook(playerUUID, "Create bank account.", "Create "+name+" bank account.", 
 							new Date(System.currentTimeMillis()), TransactionType.CREATE, TypeLog.MONEY);
-					int playerID = manageDatabase.getPlayerId(playerUUID.toString());
-					manageDatabase.createBankAccount(name, playerID);
-				}
+				DatabaseTask dt = new DatabaseTask("Database",0,new CreateBankAccount(playerUUID,name));
+				taskManager.registerTask(dt);
 				return BankXResponse.SUCCESS;
 			}
 		}
@@ -189,9 +178,8 @@ public class ManagerAccount {
 					logIntoBook(ownerPlayer, "Delete bank account.", "Delete "+name+" bank account.", 
 							new Date(System.currentTimeMillis()), TransactionType.DELETE, TypeLog.MONEY);
 					playerData.listBanksAccount.remove(bankAccount);
-					if(manageDatabase != null){
-						manageDatabase.deleteBankAccount(name);
-					}
+					DatabaseTask dt = new DatabaseTask("Database",0,new DeleteBankAccount(ownerPlayer,name));
+					taskManager.registerTask(dt);
 					return bankAccount.getBalance();
 				}
 			}
@@ -205,11 +193,8 @@ public class ManagerAccount {
 			bankAccount.setBalance(totalBalance);
 			logIntoBook(uuidPlayer, "Add money in bank account.", "Add " +amount+ " " + plugin.getRepresentMoney() + " in "+name+" bank account.", 
 					new Date(System.currentTimeMillis()), TransactionType.ADD, TypeLog.MONEY);
-			if(manageDatabase != null){
-				if(manageDatabase.getBankId(name) != -1){
-					manageDatabase.updateAmountBank(name, totalBalance);
-				}
-			}
+			DatabaseTask dt = new DatabaseTask("Database",0,new UpdateBankAmount(uuidPlayer,totalBalance,name));
+			taskManager.registerTask(dt);
 			return BankXResponse.SUCCESS;
 		}
 		return BankXResponse.BANK_ACCOUNT_NOT_EXIST;
@@ -224,11 +209,8 @@ public class ManagerAccount {
 				bankAccount.setBalance(totalBalance);
 				logIntoBook(playerUUID, "Remove money in bank account.", "Remove " +amount+ " " + plugin.getRepresentMoney() + " in "+bankName+" bank account.", 
 						new Date(System.currentTimeMillis()), TransactionType.REMOVE, TypeLog.MONEY);
-				if(manageDatabase != null){
-					if(manageDatabase.getBankId(bankName) != -1){
-						manageDatabase.updateAmountBank(bankName, totalBalance);
-					}
-				}
+				DatabaseTask dt = new DatabaseTask("Database",0,new UpdateBankAmount(playerUUID,totalBalance,bankName));
+				taskManager.registerTask(dt);
 				return BankXResponse.SUCCESS;
 			}
 			return BankXResponse.NOT_ENOUGHT_MONEY;
@@ -241,8 +223,8 @@ public class ManagerAccount {
 		if(bankAccount != null){
 			if(!checkBankAccountExist(newName, playerUUID)){
 				bankAccount.setName(newName);
-				int playerID = manageDatabase.getPlayerId(playerUUID.toString());
-				manageDatabase.updateBankName(olderName, newName, playerID);
+				DatabaseTask dt = new DatabaseTask("Database",0,new UpdateBankName(playerUUID,olderName,newName));
+				taskManager.registerTask(dt);
 				return true;
 			}
 		}
@@ -254,7 +236,8 @@ public class ManagerAccount {
 		if(bankAccount != null){
 			boolean inventoryExist = false;
 			String invenName = "";
-			for(String inventoryName : bankAccount.getBankInventories().keySet()){
+			for(InventoryItems inv : bankAccount.listInventaire){
+				String inventoryName = inv.getName();
 				if(inventoryName.equals(olderName)){
 					inventoryExist = true;
 					invenName = inventoryName;
@@ -264,11 +247,15 @@ public class ManagerAccount {
 					break;
 				}
 			}
-			if(inventoryExist){
-				ItemStack[] items = bankAccount.getBankInventories().get(invenName);
-				bankAccount.getBankInventories().remove(invenName);
-				bankAccount.getBankInventories().put(newName, items);
-				manageDatabase.updateInventoryName(bankName, olderName, newName);
+			if(inventoryExist) {
+				InventoryItems invLast = bankAccount.getInventoryItems(invenName);
+				InventoryItems invNew = new InventoryItems(newName,invLast.getSize());
+				invNew.setMaxStackSize(invLast.getMaxStackSize());
+				invNew.setContents(invLast.getContents());
+				bankAccount.listInventaire.remove(invLast);
+				bankAccount.listInventaire.add(invNew);
+				DatabaseTask dt = new DatabaseTask("Database",0,new UpdateInventoryName(playerUUID,olderName,newName,bankName));
+				taskManager.registerTask(dt);
 				return true;
 			}
 		}
@@ -409,14 +396,15 @@ public class ManagerAccount {
 	
 	private void logIntoBook(UUID playerUUID, String nameLog,String descriptionLog, Date date, TransactionType transactType, TypeLog logType){
 		PlayerData playerData = getPlayerData(playerUUID);
-		manageDatabase.addLogEntry(playerUUID, nameLog,descriptionLog, date, transactType, logType);
-		int bookId = manageDatabase.getBookId(playerUUID, nameLog,descriptionLog, date, transactType, logType);
-		playerData.listBookLog.add(new BookLog(nameLog,descriptionLog, date, transactType, logType,bookId));
+		BookLog booklog = new BookLog(nameLog,descriptionLog, date, transactType, logType);
+		DatabaseTask dt = new DatabaseTask("Database",0,new LogEntry(playerUUID,booklog));
+		taskManager.registerTask(dt);
+		playerData.listBookLog.add(booklog);
 	}
 	
 	PlayerData getPlayerData(UUID playerUUID){
 		for(PlayerData playerData : bankData.listPlayerData){
-			if(playerData.playerUUID == playerUUID){
+			if(playerData.playerUUID.equals(playerUUID)){
 				return playerData;
 			}
 		}

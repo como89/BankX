@@ -1,9 +1,9 @@
 main: net.como89.bankx.BankX
 name: BankX
-version: 0.5b DEVBUILD 6
+version: 0.5b DEVBUILD 8
 authors: [como89,madtomic]
 softdepend: [Citizens,Vault]
-loadbefore: [dtlTraders]
+loadbefore: [dtlTraders,Blacksmith]
 depend: [MyApi]
 commands:
     money:

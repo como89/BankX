@@ -18,9 +18,11 @@ public class VaultHook implements Economy {
 	
 	private BankXApi bankX_api;
 	private static String name;
+	private String currency;
 	
 	public VaultHook(BankX bankX){
 		bankX_api = bankX.getBankXAPI();
+		currency = bankX.getRepresentMoney();
 	}
 	
 	public static void hookToVault(BankX bank){
@@ -58,17 +60,17 @@ public class VaultHook implements Economy {
 
 	@Override
 	public String format(double amount) {
-		return "";
+		return amount + " " + currency;
 	}
 
 	@Override
 	public String currencyNamePlural() {
-		return "";
+		return currency;
 	}
 
 	@Override
 	public String currencyNameSingular() {
-		return "";
+		return currency;
 	}
 
 	@Override

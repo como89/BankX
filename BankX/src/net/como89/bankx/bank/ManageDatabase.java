@@ -10,11 +10,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import ca.como89.myapi.MyApiLib;
 import ca.como89.myapi.api.ApiResponse;
@@ -27,6 +22,8 @@ import ca.como89.myapi.api.mysql.TypeCondition;
 import ca.como89.myapi.api.mysql.TypeData;
 import ca.como89.myapi.api.mysql.exception.IllegalTypeException;
 import ca.como89.myapi.api.mysql.exception.LengthTableException;
+import net.como89.bankx.bank.items.InventoryItems;
+import net.como89.bankx.bank.items.Items;
 import net.como89.bankx.bank.logsystem.BookLog;
 import net.como89.bankx.bank.logsystem.TransactionType;
 import net.como89.bankx.bank.logsystem.TypeLog;
@@ -43,16 +40,24 @@ public class ManageDatabase {
 		this.prefix = prefix;
 	}
 	
-	public static void initDatabaseInstance(String prefix) {
+	public static void initDatabaseInstance(String prefix,String... params) {
 		manageDatabase = new ManageDatabase(prefix);
+		manageDatabase.init(params);
 	}
 	
 	public static ManageDatabase getDatabaseInstance() {
 		return manageDatabase;
 	}
 	
-	public boolean connectToDatabase(String host, int port, String userName, String password, String database){
-		myapi.init(host, port, userName, password, database);
+	private void init(String... params) {
+		if(params.length == 5) {
+		myapi.init(params[0], Integer.parseInt(params[1]), params[2], params[3], params[4]);
+		} else {
+			myapi.init(params[0]);
+		}
+	}
+	
+	public boolean connectToDatabase(){	
 		try {
 			myapi.connect();
 			return true;
@@ -60,20 +65,6 @@ public class ManageDatabase {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			Bukkit.getLogger().warning("Cannot connect to database! Please verify your entries in the config!");
-		}
-		return false;
-	}
-	
-	public boolean openSQLFile(String link){
-		myapi.init(link);
-		try {
-			myapi.connect();
-			return true;
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			Bukkit.getLogger().warning("Cannot read the SQL file, please check if the file exist!");
-			e.printStackTrace();
 		}
 		return false;
 	}
@@ -265,9 +256,8 @@ public class ManageDatabase {
 		
 	}
 	
-	public void updateBankName(String olderName, String newName,int playerID){
-		int bankId = getBankId(olderName);
-		if(bankId != -1){
+	public void updateBankName(String olderName, String newName,String uuid){
+		int playerID = getPlayerId(uuid);
 			Condition condition;
 			try {
 				TableProperties tableProperties = new TableProperties(prefix+"BankAccount",new String[]{"BankName"},new Object[]{newName});
@@ -280,12 +270,10 @@ public class ManageDatabase {
 			} catch (LengthTableException e) {
 				e.printStackTrace();
 			}
-			
-		}
 	}
 	
-	public void updateInventoryName(String bankAccountName, String olderName, String newName){
-		int bankId = getBankId(bankAccountName);
+	public void updateInventoryName(String bankAccountName, String olderName, String newName,String uuid){
+		int bankId = getBankId(bankAccountName,uuid);
 		int inventoryId = getInventoryID(olderName, bankId);
 		if(bankId != -1 && inventoryId != -1){
 			Condition condition;
@@ -323,12 +311,13 @@ public class ManageDatabase {
 			}
 		}
 	
-	private int getBankId(String bankName){
+	private int getBankId(String bankName,String uuid){
 		int id = -1;
+		int idPlayer = getPlayerId(uuid);
 		TableProperties tableProperties = new TableProperties(prefix+"BankAccount",new String [] {"ID_Bank"});
 		Condition condition;
 		try {
-			condition = new Condition("BankName",bankName,TypeCondition.EQUALS);
+			condition = new Condition(new String[]{"BankName","Player_ID"},new Object[]{bankName,idPlayer},new TypeCondition[]{TypeCondition.EQUALS,TypeCondition.EQUALS},new boolean[] {true});
 			TableData tabledata = myapi.selectValues(tableProperties, condition);
 			if(tabledata.getResponse() == ApiResponse.SUCCESS){
 				if(tabledata.getMapValue().size() != 0){
@@ -411,16 +400,16 @@ public class ManageDatabase {
 		return listId;
 	}
 
-	public boolean insertInventory(Inventory inventory,int id_Bank){
-		if(getInventoryID(inventory.getName(), id_Bank) == -1){
+	public boolean insertInventory(String bankName,String inventoryName,Items[] listItems,int maxStackSize,String uuid){
+		int id_Bank = getBankId(bankName, uuid);
+		if(getInventoryID(inventoryName, id_Bank) == -1){
 			try {
-				TableProperties tableProperties = new TableProperties(prefix+"Inventories",new String[]{"Inventory_Name","Inventory_Size","Inventory_Stack_Size","Bank_ID"},new Object[]{inventory.getName(),inventory.getSize(),inventory.getMaxStackSize(),id_Bank});
+				TableProperties tableProperties = new TableProperties(prefix+"Inventories",new String[]{"Inventory_Name","Inventory_Size","Inventory_Stack_Size","Bank_ID"},new Object[]{inventoryName,listItems.length,maxStackSize,id_Bank});
 				myapi.insertValues(tableProperties);
-				int inventoryID = getInventoryID(inventory.getName(), id_Bank);
-				ItemStack[] items = inventory.getContents();
-				for(int x = 0; x < items.length;x++){
-					if(items[x] == null)continue;
-					insertItem(items[x],inventoryID,x);
+				int inventoryID = getInventoryID(inventoryName, id_Bank);
+				for(int x = 0; x < listItems.length;x++){
+					if(listItems[x] == null)continue;
+					insertItem(listItems[x],inventoryID,x);
 				}
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
@@ -436,25 +425,25 @@ public class ManageDatabase {
 		return false;
 	}
 	
-	public void updateInventory(Inventory inventory,int id_bank){
-		int id_inventory = getInventoryID(inventory.getName(),id_bank);
+	public void updateInventory(String bankName,String inventoryName,Items[] listItems,int maxStackSize,String uuid){
+		int id_Bank = getBankId(bankName, uuid);
+		int id_inventory = getInventoryID(inventoryName,id_Bank);
 		try {
-			TableProperties tableProperties = new TableProperties(prefix+"Inventories",new String[]{"Inventory_Name","Inventory_Size","Inventory_Stack_Size"},new Object[]{inventory.getName(),inventory.getSize(),inventory.getMaxStackSize()});
-			Condition condition = new Condition("Inventory_Name",inventory.getName(),TypeCondition.EQUALS);
+			TableProperties tableProperties = new TableProperties(prefix+"Inventories",new String[]{"Inventory_Name","Inventory_Size","Inventory_Stack_Size"},new Object[]{inventoryName,listItems.length,maxStackSize});
+			Condition condition = new Condition("Inventory_Name",inventoryName,TypeCondition.EQUALS);
 			myapi.updateValues(tableProperties,condition);
-			ItemStack[] items = inventory.getContents();
-			for(int x = 0; x < items.length;x++){
-				int id_Item = getItemId(x);
-				if(items[x] == null){
+			for(int x = 0; x < listItems.length;x++){
+				int id_Item = getItemId(x,id_inventory);
+				if(listItems[x] == null){
 					if(id_Item != -1){
 						removeItem(id_Item);
 					}
 					continue;
 				}
 				if(id_Item == -1){
-					insertItem(items[x],id_inventory,x);
+					insertItem(listItems[x],id_inventory,x);
 				} else {
-				updateItem(items[x],id_inventory,x);
+				updateItem(listItems[x],id_inventory,x);
 				}
 			}
 		} catch (IllegalArgumentException e) {
@@ -467,12 +456,12 @@ public class ManageDatabase {
 	}
 	
 	
-	public void addLogEntry(UUID playerUUID, String nameLog,String descriptionLog, Date date, TransactionType transactType, TypeLog logType){
+	public int addLogEntry(UUID playerUUID, String nameLog,String descriptionLog, String date, String transactType, String logType){
 		try {
 			int playerID = getPlayerId(playerUUID.toString());
 			TableProperties tp = new TableProperties(prefix+"Logs",
 					new String[]{"Log_PlayerID","Log_Name","Log_Description","Log_Date","Log_TransactType","Log_Type"},
-					new Object[]{playerID,nameLog,descriptionLog,new SimpleDateFormat("yyyy-MM-dd").format(date),transactType.toString(),logType.toString()});
+					new Object[]{playerID,nameLog,descriptionLog,date,transactType,logType});
 			myapi.insertValues(tp);
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
@@ -483,15 +472,16 @@ public class ManageDatabase {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return getBookId(playerUUID, nameLog, descriptionLog, date, transactType, logType);
 	}
 	
-	public int getBookId(UUID playerUUID, String nameLog,String descriptionLog, Date date, TransactionType transactType, TypeLog logType){
+	private int getBookId(UUID playerUUID, String nameLog,String descriptionLog, String date, String transactType, String logType){
 		int idBook = -1;	
 		try {
 			int playerID = getPlayerId(playerUUID.toString());
 			TableProperties tp = new TableProperties(prefix+"Logs",new String[]{"ID_Log"});
 			Condition condition = new Condition(new String[]{"Log_PlayerID","Log_Name","Log_Description","Log_Date","Log_TransactType","Log_Type"},
-					new Object[]{playerID,nameLog,descriptionLog,new SimpleDateFormat("yyyy-MM-dd").format(date),transactType.toString(),logType.toString()},
+					new Object[]{playerID,nameLog,descriptionLog,date,transactType,logType},
 					new TypeCondition[]{TypeCondition.EQUALS,TypeCondition.EQUALS,TypeCondition.EQUALS,TypeCondition.EQUALS,TypeCondition.EQUALS,TypeCondition.EQUALS},
 					new boolean[]{true,true,true,true,true});
 			TableData td = myapi.selectValues(tp, condition);
@@ -510,12 +500,14 @@ public class ManageDatabase {
 		return idBook;
 	}
 	
-	private int getItemId(int itemFrame) {
+	private int getItemId(int itemFrame,int inventory_id) {
 		int id = -1;
 		TableProperties tableProperties = new TableProperties(prefix+"Items",new String [] {"ID_Item"});
 		Condition condition;
 		try {
-			condition = new Condition("Item_Frame",itemFrame,TypeCondition.EQUALS);
+			condition = new Condition(new String[]{"Item_Frame","ID_Inventory"},
+					new Object[] {itemFrame,inventory_id},
+					new TypeCondition[]{TypeCondition.EQUALS,TypeCondition.EQUALS},new boolean[] {true});
 			TableData tabledata = myapi.selectValues(tableProperties, condition);
 			if(tabledata.getResponse() == ApiResponse.SUCCESS){
 				if(tabledata.getMapValue().size() != 0){
@@ -544,13 +536,13 @@ public class ManageDatabase {
 			}
 	}
 
-	private void insertItem(ItemStack item, int inventory_ID,int itemFrame) {
+	private void insertItem(Items item, int inventory_ID,int itemFrame) {
 		try {
 		TableProperties tableProperties = new TableProperties(prefix+"Items",new String[]{"Item_DisplayName","Item_Lores","Item_Enchantment","Item_Material","Item_Amount","Item_Frame","ID_Inventory"},
-				new Object[]{item.hasItemMeta()?item.getItemMeta().getDisplayName():null,
-						item.hasItemMeta()?Utils.getLoresInString(item.getItemMeta().getLore()):null,
-								item.getEnchantments().size() > 0?Utils.getEnchantsInString(item.getItemMeta().getEnchants()):null,
-										item.getType().toString(),item.getAmount(),itemFrame,inventory_ID});
+				new Object[]{item.hasDisplayName()?item.getDisplayName():null,
+						item.hasLore()?item.getListLore():null,
+								item.hasEnchantments()?item.getEnchantmentList():null,
+										item.getTypeMaterial(),item.getAmount(),itemFrame,inventory_ID});
 		myapi.insertValues(tableProperties);
 		}
 		catch (IllegalArgumentException e) {
@@ -564,9 +556,14 @@ public class ManageDatabase {
 		}
 	}
 	
-	private void updateItem(ItemStack item, int inventory_ID, int itemFrame){
+	private void updateItem(Items item, int inventory_ID, int itemFrame){
 		try {
-			TableProperties tableProperties = new TableProperties(prefix+"Items",new String[]{"Item_DisplayName","Item_Lores","Item_Enchantment","Item_Material","Item_Amount","Item_Frame","ID_Inventory"},new Object[]{item.hasItemMeta()?item.getItemMeta().getDisplayName():null,item.hasItemMeta()?Utils.getLoresInString(item.getItemMeta().getLore()):null,item.hasItemMeta()?Utils.getEnchantsInString(item.getItemMeta().getEnchants()):null,item.getType().toString(),item.getAmount(),itemFrame,inventory_ID});
+			TableProperties tableProperties = new TableProperties(prefix+"Items",
+					new String[]{"Item_DisplayName","Item_Lores","Item_Enchantment","Item_Material","Item_Amount","Item_Frame","ID_Inventory"},
+					new Object[]{item.hasDisplayName()?item.getDisplayName():null,
+							item.hasLore()?item.getListLore():null,
+									item.hasEnchantments()?item.getEnchantmentList():null,
+											item.getTypeMaterial(),item.getAmount(),itemFrame,inventory_ID});
 			Condition condition = new Condition("Item_Frame",itemFrame,TypeCondition.EQUALS);
 			myapi.updateValues(tableProperties,condition);
 			}
@@ -601,9 +598,6 @@ public class ManageDatabase {
 		return id;
 	}
 	
-	/*
-	 * TODO: readd the inventories into the bank inventories list.
-	 */
 	private ArrayList<BankAccount> getListOfBankAccount(ArrayList<Integer> idBanks){
 		ArrayList<BankAccount> listBank = new ArrayList<BankAccount>();
 		for(int id : idBanks){
@@ -618,11 +612,8 @@ public class ManageDatabase {
 						String bankName = (String) data.get(0);
 						double amount = (Double) data.get(1);
 						BankAccount bankAccount = new BankAccount(bankName,amount);
-						ArrayList<Inventory> listInv = getInventoryList(id);
-						for(Inventory inv : listInv){
-							//getBankInventoies method return a copy of the bank inventories. Need to be change.
-							bankAccount.getBankInventories().put(inv.getName(), inv.getContents());
-						}
+						ArrayList<InventoryItems> listInv = getInventoryList(id);
+						bankAccount.listInventaire = listInv;
 						listBank.add(bankAccount);
 					}
 				}
@@ -687,7 +678,8 @@ public class ManageDatabase {
 						}
 						int indexModulo = (index + 1) % 6;
 						if(indexModulo == 0) {
-							BookLog bookLog = new BookLog(logName, logDescription, logDate, transactType, logType, id);
+							BookLog bookLog = new BookLog(logName, logDescription, logDate, transactType, logType);
+							bookLog.setID(id);
 							listBookLog.add(bookLog);
 							indexTable = 1;
 						} else {
@@ -731,8 +723,8 @@ public class ManageDatabase {
 		return amount;
 	}
 	
-	private ArrayList<Inventory> getInventoryList(int bankId){
-		ArrayList<Inventory> listInventory = new ArrayList<Inventory>();
+	private ArrayList<InventoryItems> getInventoryList(int bankId){
+		ArrayList<InventoryItems> listInventory = new ArrayList<>();
 		TableProperties tableProperties = new TableProperties(prefix+"Inventories",new String [] {"ID_Inventory","Inventory_Name","Inventory_Size","Inventory_Stack_Size"});
 		Condition condition;
 		try {
@@ -761,9 +753,9 @@ public class ManageDatabase {
 						if(indexTable < 4){
 							indexTable++;
 						} else {
-							Inventory inv = Bukkit.createInventory(null, size, inventoryName);
+							InventoryItems inv = new InventoryItems(inventoryName,size);
 							inv.setMaxStackSize(stackSize);
-							inv.setContents(getItemStacks(id_inventory, size));
+							inv.setContents(getItems(id_inventory, size));
 							listInventory.add(inv);
 							indexTable = 1;
 						}
@@ -780,8 +772,8 @@ public class ManageDatabase {
 		return listInventory;
 	}
 	
-	private ItemStack[] getItemStacks(int inventoryId,int size) {
-		ItemStack[] items = new ItemStack[size];
+	private Items[] getItems(int inventoryId,int size) {
+		Items[] items = new Items[size];
 		try {
 			TableProperties tableProperties = new TableProperties(prefix+"Items",new String [] {"Item_DisplayName","Item_Lores","Item_Material","Item_Enchantment","Item_Amount","Item_Frame"});
 			Condition condition = new Condition("ID_Inventory",inventoryId,TypeCondition.EQUALS);
@@ -815,24 +807,7 @@ public class ManageDatabase {
 						if(indexTable < 6){
 							indexTable++;
 						} else {
-							ItemStack item = new ItemStack(Material.getMaterial(itemMaterial),itemAmount);
-							if(!itemDisplayName.equals("null") || !itemLores.equals("null") || !itemEnchantment.equals("null")){
-								ItemMeta itemM = item.getItemMeta();
-								if(!itemDisplayName.equals("null")){
-								itemM.setDisplayName(itemDisplayName);
-								}
-								if(!itemLores.equals("null")){
-									List<String> lore = Utils.getLoresInList(itemLores);
-									itemM.setLore(lore);
-								}
-								if(!itemEnchantment.equals("null")){
-									Map<Enchantment,Integer> enchantmentMap = Utils.getEnchantmentMap(itemEnchantment);
-									for(Enchantment enchantment : enchantmentMap.keySet()){
-										itemM.addEnchant(enchantment, enchantmentMap.get(enchantment), true);
-									}
-								}
-								item.setItemMeta(itemM);
-							}
+							Items item = new Items(itemDisplayName,itemMaterial,itemLores,itemEnchantment,itemAmount);
 							items[itemFrame] = item;
 							indexTable = 1;
 						}
